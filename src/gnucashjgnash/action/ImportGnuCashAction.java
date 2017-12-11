@@ -1,3 +1,19 @@
+/*
+ * Copyright 2017 Albert Santos.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 package gnucashjgnash.action;
 
 import javafx.concurrent.Task;
@@ -113,62 +129,10 @@ public class ImportGnuCashAction {
             alert.initOwner(stage);
 
             alert.showAndWait();
-            //Platform.runLater(alert::showAndWait);
         }
 
         private void onSuccess() {
-/*            final GnuCashImport qifImport = getValue();
-            final GnuCashParser parser = qifImport.getParser();
-
-            final ImportWizard importWizard = new ImportWizard();
-
-            final WizardDialogController<ImportWizard.Settings> wizardDialogController
-                    = importWizard.wizardControllerProperty().get();
-
-            importWizard.dateFormatSelectionEnabled().set(true);
-
-            final GnuCashAccount qAccount = parser.getBank();
-
-            wizardDialogController.setSetting(ImportWizard.Settings.BANK, qAccount);
-
-            importWizard.showAndWait();
-
-            if (wizardDialogController.validProperty().get()) {
-                final Account account = (Account) wizardDialogController.getSetting(ImportWizard.Settings.ACCOUNT);
-
-                @SuppressWarnings("unchecked")
-                final List<ImportTransaction> transactions = (List<ImportTransaction>) wizardDialogController.getSetting(ImportWizard.Settings.TRANSACTIONS);
-
-                // import threads in the background
-                ImportTransactionsTask importTransactionsTask = new ImportTransactionsTask(account, transactions);
-
-                new Thread(importTransactionsTask).start();
-
-                StaticUIMethods.displayTaskProgress(importTransactionsTask);
-            }
-            */
         }
     }
 
-    private static class ImportTransactionsTask extends Task<Void> {
-
-        private final Account account;
-        private final List<ImportTransaction> transactions;
-
-        ImportTransactionsTask(final Account account, final List<ImportTransaction> transactions) {
-            this.account = account;
-            this.transactions = transactions;
-        }
-
-        @Override
-        public Void call() {
-            updateMessage(ResourceUtils.getString("Message.PleaseWait"));
-            updateProgress(-1, Long.MAX_VALUE);
-
-            /* Import the transactions */
-            GenericImport.importTransactions(transactions, account);
-
-            return null;
-        }
-    }
 }
