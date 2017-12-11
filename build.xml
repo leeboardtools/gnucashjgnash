@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="GnuCashJGnash" default="CreateJar">
+	<target name="CreateJar" description="Create Jar file">
+		<jar jarfile="../jGnash_install/plugins/GnuCashJGnash.jar" basedir="./bin" includes="**/*.class,**/*.properties" 
+			manifest="MANIFEST.MF"/>
+	</target>
+</project>
