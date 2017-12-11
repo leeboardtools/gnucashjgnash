@@ -1,5 +1,5 @@
-# This is NOT ready for use!
-As of this commit the plugin will import the basic accounts, stocks, and the stock historical prices.
+# The plugin is NOT ready for use!
+As of this commit the plugin will import the basic accounts, stocks, and the stock historical prices. No transactions are imported.
 
 This is a jGnash plugin for a fairly simple Gnucash database into an equivalent jGnash database.
 This has only been tested on GnuCash V 2.6.17/2.6.18
@@ -219,3 +219,62 @@ replacing *testjgnashplugin.TestJGnashPlugin* with the fully qualified name of y
 - The ultimate test will be to open the **File > Import** menu in jGnash, it should show an item
         *Test JGnash Plugin*, which was added by the plugin.
 
+At this point you need to do two things in order to get jGnash running with the plugin:
+1 Build the JAR file.
+2 Launch jGnash.
+
+You can set things up to do both from one launch configuration. First you'll need to create an Ant build file to 
+build the JAR file in the appropriate location.
+- In *Package Explorer* select your project.
+- Choose **File > New > Other**. The *Select a wizard* window appears.
+    - Select *XML > XML File*
+    - Choose **Next**.
+    - The *Create a new XML file* window appears.
+    - Select your project.
+    - For *File name:* enter:
+    > build.xml
+    - Choose **Finish**.
+- Open the new file *build.xml*, which should be at the root of your project, if it is not automatically opened.
+- Enter the following in *build.xml*:
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="GnuCashJGnash" default="CreateJar">
+	<target name="CreateJar" description="Create Jar file">
+		<jar jarfile="../jGnash_install/plugins/TestJGnashPlugin.jar" basedir="./bin" includes="**/*.class,**/*.properties" 
+			manifest="MANIFEST.MF"/>
+	</target>
+</project>
+```
+replacing *TestJGnashPlugin* with the name for your JAR file.
+- Save everything.
+- Select *build.xml* in *Package Explorer*.
+- Choose **File > Properties**. The *Properties for build.xml* window appears.
+    - Select *Run/Debug Settings*
+    - Choose **New...**. The *Select Configuration Type* window appears.
+        - Select *Ant Build*
+        - Choose **OK**. The *Edit Configuration* window appears.
+            - Change *Name:* to *Build JAR*.
+            - Choose **OK**.
+    - You should be back in the *Properties for build.xml* window.
+        - Choose **Apply and Close**.
+        
+    
+- Choose **Run > Run Configurations...**. The *Run Configurations* window will appear.
+    - Select *Launch Group*.
+    - Choose the **New** button to create a new launch configuration.
+        - Enter a name for the configuration, say *jGnash plugin*.
+        - Choose **Add...**. The *Add Launch Configuration* window appears.
+            - Select *Ant Build*, then *Build JAR*.
+            - Choose **OK**.
+        - Choose **Add...** again.
+            - Select *Java Application*, then *jGnash*.
+            - Choose **OK**
+        - The *Launches* tab should show something like:
+```
+        Ant Biuld::Build JAR
+        Java Application::jGnash
+```
+The order is important, as we want to build the JAR before launching jGnash...
+To test it out:
+    - First go to the *jGnash_install/plugins* folder and delete the JAR that had been created earlier. Don't delete jGnash' mt940 JAR, though!
+    - Back in Eclipse, run the configuration. jGnash should launch, and your plugin should update the menus accordingly.
