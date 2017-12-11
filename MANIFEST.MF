@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Plugin-Activator: gnucashjgnash.GnuCashConvertPlugin
+Plugin-Version: 2.25
+
