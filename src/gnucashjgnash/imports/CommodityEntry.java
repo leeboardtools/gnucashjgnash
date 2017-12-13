@@ -21,6 +21,10 @@ import jgnash.engine.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import gnucashjgnash.imports.AccountImportEntry.SimpleDataSetterImpl;
+import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
+import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
+
 public class CommodityEntry {
     String space;
     String id;
@@ -44,7 +48,7 @@ public class CommodityEntry {
 
         CommodityStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler, 
                               String elementName) {
-            super(contentHandler, parentStateHandler, elementName, _getCommodityStateHandlerQNameToStateHandlers());
+            super(contentHandler, parentStateHandler, elementName, null);
         }
 
         @Override
@@ -56,7 +60,84 @@ public class CommodityEntry {
             return true;
         }
 
-        @Override
+        /* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
+		 */
+		@Override
+		protected StateHandler getStateHandlerForElement(String qName) {
+			switch (qName) {
+			case "cmdty:space" :
+				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+		                @Override
+		                protected void setCommodityEntryField(CommodityEntry commodityEntry, String value) {
+		                    commodityEntry.space = value;
+		                }
+		            });
+
+			case "cmdty:id" :
+				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+		                @Override
+		                protected void setCommodityEntryField(CommodityEntry commodityEntry, String value) {
+		                    commodityEntry.id = value;
+		                }
+		            });
+
+			case "cmdty:name" :
+				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+		                @Override
+		                protected void setCommodityEntryField(CommodityEntry commodityEntry, String value) {
+		                    commodityEntry.name = value;
+		                }
+		            });
+	
+			case "cmdty:xcode" :
+				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+		                @Override
+		                protected void setCommodityEntryField(CommodityEntry commodityEntry, String value) {
+		                    commodityEntry.xCode = value;
+		                }
+		            });
+
+			case "cmdty:fraction" : 
+				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+		                @Override
+		                protected void setCommodityEntryField(CommodityEntry commodityEntry, String value) {
+		                    commodityEntry.fraction = value;
+		                }
+		            });
+
+			case "cmdty:get_quotes" : 
+				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+		                @Override
+		                protected void setCommodityEntryField(CommodityEntry commodityEntry, String value) {
+		                    commodityEntry.isGetQuotes = true;
+		                }
+		            });
+
+            case "cmdty:quote_source" :
+				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+		                @Override
+		                protected void setCommodityEntryField(CommodityEntry commodityEntry, String value) {
+		                    commodityEntry.quoteSource = value;
+		                }
+		            });
+
+            case "cmdty:quote_tz" :
+				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+		                @Override
+		                protected void setCommodityEntryField(CommodityEntry commodityEntry, String value) {
+		                    commodityEntry.quoteTimeZone = value;
+		                }
+		            });
+
+            case "cmdty:slots" : 
+            	return new SlotEntry.SlotsStateHandler(this.commodityEntry.slots, this.contentHandler, this, qName);
+
+			}
+			return super.getStateHandlerForElement(qName);
+		}
+
+		@Override
         protected void endState() {
             super.endState();
 
@@ -102,81 +183,6 @@ public class CommodityEntry {
     }
 
 
-    static Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> _CommodityStateHandlerQNameToStateHandlers = null;
-    static Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> _getCommodityStateHandlerQNameToStateHandlers() {
-        if (_CommodityStateHandlerQNameToStateHandlers == null) {
-            Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> stateHandlers = _CommodityStateHandlerQNameToStateHandlers = new HashMap<>();
-
-            GnuCashToJGnashContentHandler.addSimpleDataStateHandler(stateHandlers, "cmdty:space", new SimpleDataSetterImpl() {
-                @Override
-                protected void setCommodityEntryField(CommodityEntry commodityEntry, String value) {
-                    commodityEntry.space = value;
-                }
-            });
-
-            GnuCashToJGnashContentHandler.addSimpleDataStateHandler(stateHandlers, "cmdty:id", new SimpleDataSetterImpl() {
-                @Override
-                protected void setCommodityEntryField(CommodityEntry commodityEntry, String value) {
-                    commodityEntry.id = value;
-                }
-            });
-
-            GnuCashToJGnashContentHandler.addSimpleDataStateHandler(stateHandlers, "cmdty:name", new SimpleDataSetterImpl() {
-                @Override
-                protected void setCommodityEntryField(CommodityEntry commodityEntry, String value) {
-                    commodityEntry.name = value;
-                }
-            });
-
-            GnuCashToJGnashContentHandler.addSimpleDataStateHandler(stateHandlers, "cmdty:xcode", new SimpleDataSetterImpl() {
-                @Override
-                protected void setCommodityEntryField(CommodityEntry commodityEntry, String value) {
-                    commodityEntry.xCode = value;
-                }
-            });
-
-            GnuCashToJGnashContentHandler.addSimpleDataStateHandler(stateHandlers, "cmdty:fraction", new SimpleDataSetterImpl() {
-                @Override
-                protected void setCommodityEntryField(CommodityEntry commodityEntry, String value) {
-                    commodityEntry.fraction = value;
-                }
-            });
-
-            GnuCashToJGnashContentHandler.addSimpleDataStateHandler(stateHandlers, "cmdty:get_quotes", new SimpleDataSetterImpl() {
-                @Override
-                protected void setCommodityEntryField(CommodityEntry commodityEntry, String value) {
-                    commodityEntry.isGetQuotes = true;
-                }
-            });
-
-            GnuCashToJGnashContentHandler.addSimpleDataStateHandler(stateHandlers, "cmdty:quote_source", new SimpleDataSetterImpl() {
-                @Override
-                protected void setCommodityEntryField(CommodityEntry commodityEntry, String value) {
-                    commodityEntry.quoteSource = value;
-                }
-            });
-
-            GnuCashToJGnashContentHandler.addSimpleDataStateHandler(stateHandlers, "cmdty:quote_tz", new SimpleDataSetterImpl() {
-                @Override
-                protected void setCommodityEntryField(CommodityEntry commodityEntry, String value) {
-                    commodityEntry.quoteTimeZone = value;
-                }
-            });
-
-            stateHandlers.put("cmdty:slots", new GnuCashToJGnashContentHandler.StateHandlerCreator() {
-                @Override
-                public GnuCashToJGnashContentHandler.StateHandler createStateHandler(GnuCashToJGnashContentHandler contentHandler,
-                                                                                     GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
-                                                                                     String elementName) {
-                    CommodityStateHandler commodityStateHandler = (CommodityStateHandler)parentStateHandler;
-                    return new SlotEntry.SlotsStateHandler(contentHandler, parentStateHandler, elementName, commodityStateHandler.commodityEntry.slots);
-                }
-            });
-        }
-        return _CommodityStateHandlerQNameToStateHandlers;
-    }
-
-
 
     public static class CommodityRef {
         String space;
@@ -204,9 +210,35 @@ public class CommodityEntry {
         final CommodityRef commodityRef;
         CommodityRefStateHandler(final CommodityRef commodityRef, GnuCashToJGnashContentHandler contentHandler,
                                  GnuCashToJGnashContentHandler.StateHandler parentStateHandler, String elementName) {
-            super(contentHandler, parentStateHandler, elementName, _getCommodityRefStateHandlerQNameToStateHandlers());
+            super(contentHandler, parentStateHandler, elementName, null);
             this.commodityRef = commodityRef;
         }
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
+		 */
+		@Override
+		protected StateHandler getStateHandlerForElement(String qName) {
+			switch (qName) {
+			case "cmdty:space" : 
+				return new SimpleDataStateHandler(this.contentHandler, this, qName, new RefSimpleDataSetterImpl() {
+		                @Override
+		                protected void setCommodityRefField(CommodityRef commodityRef, String value) {
+		                    commodityRef.space = value;
+		                }
+		            });
+
+			case "cmdty:id" : 
+				return new SimpleDataStateHandler(this.contentHandler, this, qName, new RefSimpleDataSetterImpl() {
+		                @Override
+		                protected void setCommodityRefField(CommodityRef commodityRef, String value) {
+		                    commodityRef.id = value;
+		                }
+		            });
+				
+			}
+			return super.getStateHandlerForElement(qName);
+		}
     }
 
     public static class CurrencyRefStateHandler extends CommodityRefStateHandler {
@@ -227,30 +259,7 @@ public class CommodityEntry {
         protected abstract void setCommodityRefField(CommodityRef commodityRef, String value);
     }
 
-    static Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> _CommodityRefStateHandlerQNameToStateHandlers = null;
-    static Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> _getCommodityRefStateHandlerQNameToStateHandlers() {
-        if (_CommodityRefStateHandlerQNameToStateHandlers == null) {
-            Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> stateHandlers = _CommodityRefStateHandlerQNameToStateHandlers = new HashMap<>();
-
-            GnuCashToJGnashContentHandler.addSimpleDataStateHandler(stateHandlers, "cmdty:space", new RefSimpleDataSetterImpl() {
-                @Override
-                protected void setCommodityRefField(CommodityRef commodityRef, String value) {
-                    commodityRef.space = value;
-                }
-            });
-
-            GnuCashToJGnashContentHandler.addSimpleDataStateHandler(stateHandlers, "cmdty:id", new RefSimpleDataSetterImpl() {
-                @Override
-                protected void setCommodityRefField(CommodityRef commodityRef, String value) {
-                    commodityRef.id = value;
-                }
-            });
-
-        }
-        return _CommodityRefStateHandlerQNameToStateHandlers;
-    }
-
-
+    
     public boolean createJGnashCommodity(GnuCashToJGnashContentHandler contentHandler, Engine engine) {
         if (this.isCurrency) {
             return createJGnashCurrency(contentHandler, engine);

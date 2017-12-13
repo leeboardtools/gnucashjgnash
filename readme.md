@@ -31,6 +31,9 @@ The following account types are not supported:
     - There is no high/low/volume, high and low are set to the current price, volume is set to 0.
     - The source (price:source) is ignored.
 
+- Transactions:
+	- Lots are not yet supported.
+	- If both the credit and debit sides of a transaction entry pair have a memo, the memo for the credit side is the one used.
 
 # Project Development Notes:
 Here are my notes on creating a new plugin for jGnash that can be developed and debugged from Eclipse.

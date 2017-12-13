@@ -25,6 +25,8 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
+import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
+
 public class PriceEntry {
     IdEntry id = new IdEntry();
     CommodityEntry.CommodityRef commodityRef = new CommodityEntry.CommodityRef();
@@ -68,7 +70,7 @@ public class PriceEntry {
 
         PriceStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
                           String elementName) {
-            super(contentHandler, parentStateHandler, elementName, _getPriceStateHandlerQNameToStateHandlers());
+            super(contentHandler, parentStateHandler, elementName, null);
         }
 
         @Override
@@ -113,31 +115,19 @@ public class PriceEntry {
                     return new TimeEntry.TimeStateHandler(this.priceEntry.time, this.contentHandler, this, qName);
 
                 case "price:value":
-                    return new NumericEntry.NumericStateEntry(this.priceEntry.value, this.contentHandler, this, qName);
+                    return new NumericEntry.NumericStateHandler(this.priceEntry.value, this.contentHandler, this, qName);
+                    
+                case "price:source":
+    				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+	    	                @Override
+	    	                protected void setPriceEntryField(PriceEntry priceEntry, String value) {
+	    	                    priceEntry.source = value;
+	    	                }
+	    	            }); 
             }
 
             return super.getStateHandlerForElement(qName);
         }
-    }
-
-    static Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> _PriceStateHandlerQNameToStateHandlers = null;
-    static Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> _getPriceStateHandlerQNameToStateHandlers() {
-        if (_PriceStateHandlerQNameToStateHandlers == null) {
-            Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> stateHandlers = _PriceStateHandlerQNameToStateHandlers = new HashMap<>();
-
-            // price:commodity
-            // price:currency
-            // price:time
-            // price:value are handed in getStateHandlerForElement()...
-
-            GnuCashToJGnashContentHandler.addSimpleDataStateHandler(stateHandlers, "price:source", new SimpleDataSetterImpl() {
-                @Override
-                protected void setPriceEntryField(PriceEntry priceEntry, String value) {
-                    priceEntry.source = value;
-                }
-            });
-        }
-        return _PriceStateHandlerQNameToStateHandlers;
     }
 
     static abstract class SimpleDataSetterImpl extends GnuCashToJGnashContentHandler.AbstractSimpleDataSetter {

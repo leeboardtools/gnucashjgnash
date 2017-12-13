@@ -23,9 +23,9 @@ public class NumericEntry {
     BigInteger numerator = null;
     BigInteger denominator = null;
 
-    public static class NumericStateEntry extends GnuCashToJGnashContentHandler.AbstractStateHandler {
+    public static class NumericStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
         final NumericEntry numericEntry;
-        NumericStateEntry(final NumericEntry numericEntry, GnuCashToJGnashContentHandler contentHandler,
+        NumericStateHandler(final NumericEntry numericEntry, GnuCashToJGnashContentHandler contentHandler,
                           GnuCashToJGnashContentHandler.StateHandler parentStateHandler, String elementName) {
             super(contentHandler, parentStateHandler, elementName, null);
             this.numericEntry = numericEntry;

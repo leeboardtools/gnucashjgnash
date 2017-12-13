@@ -18,7 +18,9 @@ package gnucashjgnash.imports;
 
 import org.xml.sax.Attributes;
 
-import java.util.HashMap;
+import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
+import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
+
 import java.util.Map;
 
 public class SlotEntry {
@@ -41,43 +43,70 @@ public class SlotEntry {
 
     static class SlotsStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
         final Map<String, SlotEntry> slotEntries;
-        SlotsStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler, String elementName,
-                          Map<String, SlotEntry> slotEntries) {
-            super(contentHandler, parentStateHandler, elementName, _getSlotsStateHandlerQNameToStateHandlers());
+        SlotsStateHandler(Map<String, SlotEntry> slotEntries, GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
+                          String elementName) {
+            super(contentHandler, parentStateHandler, elementName, null);
             this.slotEntries = slotEntries;
         }
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
+		 */
+		@Override
+		protected StateHandler getStateHandlerForElement(String qName) {
+			switch (qName) {
+			case "slot": 
+				return new SlotStateHandler(this.slotEntries, this.contentHandler, this, qName); 
+			}
+			return super.getStateHandlerForElement(qName);
+		}
+        
+        
     }
-
-    static Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> _SlotsStateHandlerQNameToStateHandlers = null;
-    static Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> _getSlotsStateHandlerQNameToStateHandlers() {
-        if (_SlotsStateHandlerQNameToStateHandlers == null) {
-            _SlotsStateHandlerQNameToStateHandlers = new HashMap<>();
-            _SlotsStateHandlerQNameToStateHandlers.put("slot", new GnuCashToJGnashContentHandler.StateHandlerCreator() {
-                @Override
-                public GnuCashToJGnashContentHandler.StateHandler createStateHandler(GnuCashToJGnashContentHandler contentHandler,
-                                                                                     GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
-                                                                                     String elementName) {
-                    SlotsStateHandler slotsStateHandler = (SlotsStateHandler)parentStateHandler;
-                    return new SlotStateHandler(contentHandler, parentStateHandler, elementName, slotsStateHandler.slotEntries);
-                }
-            });
-        }
-        return _SlotsStateHandlerQNameToStateHandlers;
-    }
-
 
 
     static class SlotStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
         final Map<String, SlotEntry> slotEntries;
         final SlotEntry slotEntry = new SlotEntry();
 
-        SlotStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler, String elementName,
-                         Map<String, SlotEntry> slotEntries) {
-            super(contentHandler, parentStateHandler, elementName, _getSlotStateHandlerQNameToStateHandlers());
+        SlotStateHandler(Map<String, SlotEntry> slotEntries, GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
+                         String elementName) {
+            super(contentHandler, parentStateHandler, elementName, null);
             this.slotEntries = slotEntries;
         }
 
-        @Override
+        /* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
+		 */
+		@Override
+		protected StateHandler getStateHandlerForElement(String qName) {
+			switch (qName) {
+			case "slot:key" : 
+				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+		                @Override
+		                protected void setSlotEntryField(SlotEntry slotEntry, String value) {
+		                    slotEntry.key = value;
+		                }
+		            });
+				
+			case "slot:value" : 
+				// TODO Need to handle the different attribute types.
+				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+		                @Override
+		                protected void setSlotEntryAttributes(SlotEntry slotEntry, Attributes attr) {
+		                    slotEntry.valueType = attr.getValue("type");
+		                }
+	
+		                @Override
+		                protected void setSlotEntryField(SlotEntry slotEntry, String value) {
+		                    slotEntry.value = value;
+		                }
+		            });
+			}
+			return super.getStateHandlerForElement(qName);
+		}
+
+		@Override
         protected void endState() {
             super.endState();
 
@@ -96,33 +125,6 @@ public class SlotEntry {
             }
             this.slotEntries.put(this.slotEntry.key, this.slotEntry);
         }
-    }
-
-    static Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> _SlotStateHandlerQNameToStateHandlers = null;
-    static Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> _getSlotStateHandlerQNameToStateHandlers() {
-        if (_SlotStateHandlerQNameToStateHandlers == null) {
-            Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> stateHandlers = _SlotStateHandlerQNameToStateHandlers = new HashMap<>();
-
-            GnuCashToJGnashContentHandler.addSimpleDataStateHandler(stateHandlers, "slot:key", new SimpleDataSetterImpl() {
-                @Override
-                protected void setSlotEntryField(SlotEntry slotEntry, String value) {
-                    slotEntry.key = value;
-                }
-            });
-
-            GnuCashToJGnashContentHandler.addSimpleDataStateHandler(stateHandlers, "slot:value", new SimpleDataSetterImpl() {
-                @Override
-                protected void setSlotEntryAttributes(SlotEntry slotEntry, Attributes attr) {
-                    slotEntry.valueType = attr.getValue("type");
-                }
-
-                @Override
-                protected void setSlotEntryField(SlotEntry slotEntry, String value) {
-                    slotEntry.value = value;
-                }
-            });
-        }
-        return _SlotStateHandlerQNameToStateHandlers;
     }
 
     static abstract class SimpleDataSetterImpl extends GnuCashToJGnashContentHandler.AbstractSimpleDataSetter {

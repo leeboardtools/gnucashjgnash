@@ -24,6 +24,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
+import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
+
 class AccountImportEntry {
     private static final Logger LOG = Logger.getLogger(AccountImportEntry.class.getName());
 
@@ -42,14 +45,12 @@ class AccountImportEntry {
     // Not yet supported:
     // commodity-scu
     // non-standard-scu
-    // slots
-    // lots
 
     static class AccountStateHandler extends GnuCashToJGnashContentHandler.AbstractVersionStateHandler {
         AccountImportEntry accountEntry = new AccountImportEntry();
 
         AccountStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler, String elementName) {
-            super(contentHandler, parentStateHandler, elementName, _getAccountStateHandlerQNameToStateHandlers());
+            super(contentHandler, parentStateHandler, elementName, null);
         }
 
         @Override
@@ -60,6 +61,50 @@ class AccountImportEntry {
             }
             return true;
         }
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
+		 */
+		@Override
+		protected StateHandler getStateHandlerForElement(String qName) {
+			switch (qName) {
+			case "act:name" :
+				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+		                @Override
+		                protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
+		                    accountEntry.name = value;
+		                }
+		            });
+
+			case "act:id" :
+	            return new IdEntry.IdStateHandler(this.accountEntry.id, this.contentHandler, this, qName);
+
+			case "act:type" :
+				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+		                @Override
+		                protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
+		                    accountEntry.type = value;
+		                }
+		            });
+
+			case "act:description" :
+				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+		                @Override
+		                protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
+		                    accountEntry.description = value;
+		                }
+		            });
+				
+			case "act:slots" :
+                return new SlotEntry.SlotsStateHandler(this.accountEntry.slots, this.contentHandler, this, qName);
+                
+			case "act:parent" :
+				return new IdEntry.IdStateHandler(this.accountEntry.parentId, this.contentHandler, this, qName);
+
+			}
+
+			return super.getStateHandlerForElement(qName);
+		}
 
         @Override
         protected void endState() {
@@ -97,76 +142,6 @@ class AccountImportEntry {
         }
 
         protected abstract void setAccountEntryField(AccountImportEntry accountEntry, String value);
-    }
-
-
-    static Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> _AccountStateHandlerQNameToStateHandlers = null;
-    static Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> _getAccountStateHandlerQNameToStateHandlers() {
-        if (_AccountStateHandlerQNameToStateHandlers == null) {
-            Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> stateHandlers = _AccountStateHandlerQNameToStateHandlers = new HashMap<>();
-
-            GnuCashToJGnashContentHandler.addSimpleDataStateHandler(stateHandlers, "act:name", new SimpleDataSetterImpl() {
-                @Override
-                protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
-                    accountEntry.name = value;
-                }
-            });
-
-            stateHandlers.put("act:id", new GnuCashToJGnashContentHandler.StateHandlerCreator() {
-                @Override
-                public GnuCashToJGnashContentHandler.StateHandler createStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
-                                                                                     String elementName) {
-                    AccountImportEntry.AccountStateHandler accountStateHandler = (AccountImportEntry.AccountStateHandler)parentStateHandler;
-                    return new IdEntry.IdStateHandler(accountStateHandler.accountEntry.id, contentHandler, parentStateHandler, elementName);
-                }
-            });
-
-            GnuCashToJGnashContentHandler.addSimpleDataStateHandler(stateHandlers, "act:type", new SimpleDataSetterImpl() {
-                @Override
-                protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
-                    accountEntry.type = value;
-                }
-            });
-
-            GnuCashToJGnashContentHandler.addSimpleDataStateHandler(stateHandlers, "act:description", new SimpleDataSetterImpl() {
-                @Override
-                protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
-                    accountEntry.description = value;
-                }
-            });
-
-            stateHandlers.put("act:slots", new GnuCashToJGnashContentHandler.StateHandlerCreator() {
-                @Override
-                public GnuCashToJGnashContentHandler.StateHandler createStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
-                                                                                     String elementName) {
-                    AccountImportEntry.AccountStateHandler accountStateHandler = (AccountImportEntry.AccountStateHandler)parentStateHandler;
-                    return new SlotEntry.SlotsStateHandler(contentHandler, parentStateHandler, elementName, accountStateHandler.accountEntry.slots);
-                }
-            });
-
-            stateHandlers.put("act:parent", new GnuCashToJGnashContentHandler.StateHandlerCreator() {
-                @Override
-                public GnuCashToJGnashContentHandler.StateHandler createStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
-                                                                                     String elementName) {
-                    AccountImportEntry.AccountStateHandler accountStateHandler = (AccountImportEntry.AccountStateHandler)parentStateHandler;
-                    return new IdEntry.IdStateHandler(accountStateHandler.accountEntry.parentId, contentHandler, parentStateHandler, elementName);
-                }
-            });
-        }
-        return _AccountStateHandlerQNameToStateHandlers;
-    }
-
-
-    static class AccountDataStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
-        final AccountImportEntry accountEntry;
-        boolean isValid = true;
-
-        AccountDataStateHandler(AccountImportEntry accountEntry, GnuCashToJGnashContentHandler contentHandler,
-                                GnuCashToJGnashContentHandler.StateHandler parentStateHandler, String elementName,
-                                Map<String, GnuCashToJGnashContentHandler.StateHandlerCreator> qNameToStateHandlers) {
-            super(contentHandler, parentStateHandler, elementName, qNameToStateHandlers);
-            this.accountEntry = accountEntry;
-        }
     }
 
 
@@ -223,20 +198,6 @@ class AccountImportEntry {
     //MUTUAL(ResourceUtils.getString("AccountType.Mutual"), AccountGroup.INVEST, InvestmentAccountProxy.class, false),
     //ROOT(ResourceUtils.getString("AccountType.Root"), AccountGroup.ROOT, AccountProxy.class, true);
 
- */
-/*
-Need to handle:
-ASSET
-BANK
-CASH
-CREDIT- credit card
-EQUITY
-EXPENSE
-INCOME
-LIABILITY
-MUTUAL
-ROOT
-STOCK
  */
         switch (this.type) {
             case "NONE" :
