@@ -20,9 +20,6 @@ import java.time.LocalDate;
 import java.time.OffsetTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.HashMap;
-import java.util.Map;
-
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 

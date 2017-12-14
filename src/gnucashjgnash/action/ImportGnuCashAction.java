@@ -20,15 +20,11 @@ import javafx.concurrent.Task;
 import javafx.scene.control.Alert;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import jgnash.convert.imports.GenericImport;
-import jgnash.convert.imports.ImportTransaction;
-import jgnash.engine.Account;
 import jgnash.engine.DataStoreType;
 import jgnash.util.FileUtils;
 import jgnash.util.ResourceUtils;
 
 import java.io.File;
-import java.util.List;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 

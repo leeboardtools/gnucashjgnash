@@ -26,13 +26,9 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractSimpleDataSet
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractVersionStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
-import jgnash.engine.Account;
 import jgnash.engine.Engine;
-import jgnash.engine.ReconciledState;
 import jgnash.engine.Transaction;
 import jgnash.engine.TransactionEntry;
-import jgnash.engine.TransactionFactory;
-import jgnash.util.NotNull;
 
 /**
  * @author albert

@@ -21,7 +21,6 @@ import jgnash.engine.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import gnucashjgnash.imports.AccountImportEntry.SimpleDataSetterImpl;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 

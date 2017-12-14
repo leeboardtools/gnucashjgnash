@@ -26,10 +26,6 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
 import gnucashjgnash.GnuCashConvertUtil;
-import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
-import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
-import gnucashjgnash.imports.TransactionImportEntry.SimpleDataSetterImpl;
-
 import java.util.*;
 import java.util.logging.Logger;
 
