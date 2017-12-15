@@ -26,6 +26,8 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractSimpleDataSet
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractVersionStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
+import jgnash.engine.Account;
+import jgnash.engine.AccountType;
 import jgnash.engine.Engine;
 import jgnash.engine.Transaction;
 import jgnash.engine.TransactionEntry;
@@ -185,17 +187,108 @@ public class TransactionImportEntry {
     		transaction.addTransactionEntry(transactionEntry);
     	}
     	else {
-    		return true;
-/*	    	for (Map.Entry<String, SplitEntry> entry : this.splits.entrySet()) {
-	    		
-	    	}
-	    	*/
+    		if (!generateJGnashSplitTransactionEntries(contentHandler, transaction)) {
+    			return false;
+    		}
     	}
     	
     	engine.addTransaction(transaction);
     	return true;
     }
     
+    protected boolean generateJGnashSplitTransactionEntries(GnuCashToJGnashContentHandler contentHandler, Transaction transaction) {
+    	// Look for an account to serve as the main account. This will receive all the credits, and disburse all the debits.
+    	SplitEntry masterSplitEntry = null;
+    	
+    	// Look for a bank, cash, or checking account first, these in case we don't find the others.
+    	SplitEntry assetSplitEntry = null;
+    	SplitEntry investSplitEntry = null;
+    	SplitEntry creditSplitEntry = null;
+    	SplitEntry simpleInvestSplitEntry = null;
+    	
+    	for (SplitEntry splitEntry : this.splitsList) {
+    		Account jGnashAccount = splitEntry.jGnashAccount;
+    		switch (jGnashAccount.getAccountType()) {
+    		case BANK :
+    		case CASH :
+    		case CHECKING :
+    			masterSplitEntry = splitEntry;
+    			break;
+    			
+    		case ASSET :
+    			assetSplitEntry = splitEntry;
+    			break;
+    			
+    		case CREDIT:
+    			creditSplitEntry = splitEntry;
+    			break;
+    			
+    		case INVEST :
+    			investSplitEntry = splitEntry;
+    			break;
+    			
+    		case SIMPLEINVEST :
+    			simpleInvestSplitEntry = splitEntry;
+    			break;
+    			
+    		default :
+    			break;
+    		}
+    		
+    		if (masterSplitEntry != null) {
+    			break;
+    		}
+    	}
+    	
+    	if (masterSplitEntry == null) {
+    		masterSplitEntry = (creditSplitEntry != null) ? creditSplitEntry
+    				: (assetSplitEntry != null) ? assetSplitEntry
+    						: (investSplitEntry != null) ? investSplitEntry
+    								: (simpleInvestSplitEntry != null) ? simpleInvestSplitEntry
+    										: null;
+    	}
+    	if (masterSplitEntry == null) {
+    		contentHandler.recordWarning("SplitNoSupportedAccounts", "Message.Warning.SplitNoSupportedAccounts", this.id.id);
+    		return false;
+    	}
+    	
+    	// We have our master account.
+    	// Add all the credits to it and remove all the debits...
+    	for (SplitEntry splitEntry : this.splitsList) {
+    		if (splitEntry == masterSplitEntry) {
+    			continue;
+    		}
+    		
+    		TransactionEntry transactionEntry = new TransactionEntry();
+    		BigDecimal bigDecimalValue = splitEntry.value.toBigDecimal();
+    		if (bigDecimalValue.compareTo(BigDecimal.ZERO) < 0) {
+    			transactionEntry.setCreditAccount(masterSplitEntry.jGnashAccount);
+    			transactionEntry.setCreditAmount(bigDecimalValue.negate());
+    			transactionEntry.setDebitAccount(splitEntry.jGnashAccount);
+    			transactionEntry.setDebitAmount(bigDecimalValue);
+    		}
+    		else {
+    			transactionEntry.setDebitAccount(masterSplitEntry.jGnashAccount);
+    			transactionEntry.setDebitAmount(bigDecimalValue.negate());
+    			transactionEntry.setCreditAccount(splitEntry.jGnashAccount);
+    			transactionEntry.setCreditAmount(bigDecimalValue);
+    		}
+    		
+    		transactionEntry.setReconciled(masterSplitEntry.jGnashAccount, masterSplitEntry.jGnashReconciledState);
+    		transactionEntry.setReconciled(splitEntry.jGnashAccount, splitEntry.jGnashReconciledState);
+    		
+    		if (splitEntry.memo != null) {
+    			transactionEntry.setMemo(splitEntry.memo);
+    		}
+    		else if (masterSplitEntry.memo != null) {
+    			transactionEntry.setMemo(masterSplitEntry.memo);
+    		}
+    		
+    		transaction.addTransactionEntry(transactionEntry);
+    	}    	
+    	
+    	return true;
+    }
     
     protected TransactionEntry generateJGnashTransactionEntry(GnuCashToJGnashContentHandler contentHandler, SplitEntry splitEntryA, SplitEntry splitEntryB) {
     	SplitEntry creditSplitEntry;

@@ -11,11 +11,21 @@ Some of the items to note (most of this is based upon information in the GnuCash
 https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc, and might not have a direct feature in GnuCash):
 
 - Accounts:
-The following account types are not supported:
-    - Receivable
-    - Payable
-    - Trading
-    - Creditline
+Only following GnuCash account types are supported:
+ 	- Bank
+ 	- Cash
+ 	- Credit
+ 	- Asset
+ 	- Liability
+ 	- Stock (Indirectly, becomes a commodity, not yet supported)
+ 	- Mutual
+ 	- Income
+ 	- Expense
+ 	- Equity
+ 	- Root
+ 	- Checking
+ 	- Savings
+ 	- Moneymrkt
 
 - Stocks:
     - Stocks are imported based upon the stock symbol, such as AAPL (cmdty:id in the XML file), the Type (NASDAQ, NYSE, etc.)
@@ -33,6 +43,7 @@ The following account types are not supported:
 
 - Transactions:
 	- Lots are not yet supported.
+	- The post date is used, not the entered date.
 	- If both the credit and debit sides of a transaction entry pair have a memo, the memo for the credit side is the one used.
 
 # Project Development Notes:
@@ -76,7 +87,7 @@ Within the DEV folder you should now have something like:
 is the specific jGnash version that was built).
 - Extract the contents of that .ZIP file to the *DEV folder*, so you have a folder named *jGnash-2.xx.x*
 in the *DEV folder*.
-- Rename the jGnash-2.xx.x project as jGnash_install
+- Rename the jGnash-2.xx.x project as jgnash_install
 - The *DEV folder* should now look something like:
 ```
 +DEV
@@ -107,7 +118,7 @@ in the *DEV folder*.
     - Click the **Libraries** tab.
     
     - Choose the **Add External JARs** button
-        - Browse to the *DEV/jGnash_install/lib* folder
+        - Browse to the *DEV/jgnash_install/lib* folder
         - Select all the files in the folder and choose **OK**.
         
     - Choose the **Finish** button.
@@ -178,7 +189,7 @@ replacing *testjgnashplugin.TestJGnashPlugin* with the fully qualified name of y
         - Check your project under *Select the resources to export*. At the least the right half window should
             display .classpath, .project, and MANIFEST.MF, all checked.
         - For *Select the export destination*, *JAR file*, choose **Browse**
-            - Browse to the folder *jGnash_install/plugins* within your *DEV folder*
+            - Browse to the folder *jgnash_install/plugins* within your *DEV folder*
             - Enter the name for your plugin JAR file.
             - Choose **OK**.
         - Choose **Next**.
@@ -243,7 +254,7 @@ build the JAR file in the appropriate location.
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="GnuCashJGnash" default="CreateJar">
 	<target name="CreateJar" description="Create Jar file">
-		<jar jarfile="../jGnash_install/plugins/TestJGnashPlugin.jar" basedir="./bin" includes="**/*.class,**/*.properties" 
+		<jar jarfile="../jgnash_install/plugins/TestJGnashPlugin.jar" basedir="./bin" includes="**/*.class,**/*.properties" 
 			manifest="MANIFEST.MF"/>
 	</target>
 </project>
@@ -279,5 +290,5 @@ replacing *TestJGnashPlugin* with the name for your JAR file.
 ```
 The order is important, as we want to build the JAR before launching jGnash...
 To test it out:
-    - First go to the *jGnash_install/plugins* folder and delete the JAR that had been created earlier. Don't delete jGnash' mt940 JAR, though!
+    - First go to the *jgnash_install/plugins* folder and delete the JAR that had been created earlier. Don't delete jGnash' mt940 JAR, though!
     - Back in Eclipse, run the configuration. jGnash should launch, and your plugin should update the menus accordingly.

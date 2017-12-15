@@ -162,7 +162,7 @@ public class SplitEntry {
 				return new IdEntry.IdStateHandler(this.splitEntry.account, this.contentHandler, this, qName);
 				
 			case "split:lot":
-				// TODO: Lots
+				// TODO: Split lots
 				break;
 				
 			case "split:slots" : 

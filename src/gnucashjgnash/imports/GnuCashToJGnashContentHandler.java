@@ -470,8 +470,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         	return false;
         }
         
-        // TODO
-        // scheduled transactions
+        // TODO scheduled transactions
         return true;
     }
 
