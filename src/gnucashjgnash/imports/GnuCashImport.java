@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipException;
@@ -178,46 +179,60 @@ public class GnuCashImport {
 
     protected boolean importGnuCashXML(final InputStream inputStream, final String gnuCashFileName, final String jGnashFileName,
                                        final Engine engine, final StatusCallback statusCallback) {
-        if (parserFactory == null) {
-            parserFactory = SAXParserFactory.newInstance();
-            parserFactory.setNamespaceAware(true);
-        }
-
-        SAXParser saxParser;
-        XMLReader xmlReader;
-        try {
-            saxParser = parserFactory.newSAXParser();
-            xmlReader = saxParser.getXMLReader();
-        } catch (ParserConfigurationException e) {
-            this.errorMsg = GnuCashConvertUtil.getString("Message.Error.ParserConfigurationException", gnuCashFileName, e.getLocalizedMessage());
-            return false;
-        } catch (SAXException e) {
-            this.errorMsg = GnuCashConvertUtil.getString("Message.Error.ParserCreationError", gnuCashFileName, e.getLocalizedMessage());
-            return false;
-        }
-
-        GnuCashToJGnashContentHandler contentHandler = new GnuCashToJGnashContentHandler(engine, statusCallback);
-        xmlReader.setContentHandler(contentHandler);
-        try {
-
-            xmlReader.parse(new InputSource(inputStream));
-            LOG.info("Parsing of '" + gnuCashFileName + "' completed.");
-
-            if (!contentHandler.generateJGnashDatabase()) {
-                this.errorMsg = contentHandler.getErrorMsg();
-                return false;
-            }
-            else {
-                LOG.info("'" + gnuCashFileName + "' imported as '" + jGnashFileName);
-            }
-
-        } catch (IOException e) {
-            this.errorMsg = GnuCashConvertUtil.getString("Message.Error.FileReadError", gnuCashFileName, e.getLocalizedMessage());
-            return false;
-        } catch (SAXException e) {
-            this.errorMsg = GnuCashConvertUtil.getString("Message.Error.XMLFormatError", gnuCashFileName, e.getLocalizedMessage());
-            return false;
-        }
+		Logger jGnashLogger = Logger.getLogger("jgnash.engine.Engine");
+    	Level savedLoggingLevel = (jGnashLogger != null) ? jGnashLogger.getLevel() : Level.ALL;
+    	try {
+    		// TEST!!!
+    		if (jGnashLogger != null) {
+    			jGnashLogger.setLevel(Level.WARNING);
+    		}
+	    	
+	        if (parserFactory == null) {
+	            parserFactory = SAXParserFactory.newInstance();
+	            parserFactory.setNamespaceAware(true);
+	        }
+	
+	        SAXParser saxParser;
+	        XMLReader xmlReader;
+	        try {
+	            saxParser = parserFactory.newSAXParser();
+	            xmlReader = saxParser.getXMLReader();
+	        } catch (ParserConfigurationException e) {
+	            this.errorMsg = GnuCashConvertUtil.getString("Message.Error.ParserConfigurationException", gnuCashFileName, e.getLocalizedMessage());
+	            return false;
+	        } catch (SAXException e) {
+	            this.errorMsg = GnuCashConvertUtil.getString("Message.Error.ParserCreationError", gnuCashFileName, e.getLocalizedMessage());
+	            return false;
+	        }
+	
+	        GnuCashToJGnashContentHandler contentHandler = new GnuCashToJGnashContentHandler(engine, statusCallback);
+	        xmlReader.setContentHandler(contentHandler);
+	        try {
+	
+	            xmlReader.parse(new InputSource(inputStream));
+	            LOG.info("Parsing of '" + gnuCashFileName + "' completed.");
+	
+	            if (!contentHandler.generateJGnashDatabase()) {
+	                this.errorMsg = contentHandler.getErrorMsg();
+	                return false;
+	            }
+	            else {
+	                LOG.info("'" + gnuCashFileName + "' imported as '" + jGnashFileName);
+	            }
+	
+	        } catch (IOException e) {
+	            this.errorMsg = GnuCashConvertUtil.getString("Message.Error.FileReadError", gnuCashFileName, e.getLocalizedMessage());
+	            return false;
+	        } catch (SAXException e) {
+	            this.errorMsg = GnuCashConvertUtil.getString("Message.Error.XMLFormatError", gnuCashFileName, e.getLocalizedMessage());
+	            return false;
+	        }
+        
+    	} finally {
+    		if (jGnashLogger != null) {
+    			jGnashLogger.setLevel(savedLoggingLevel);
+    		}
+    	}
 
         return true;
     }

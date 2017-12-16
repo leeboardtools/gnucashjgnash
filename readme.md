@@ -11,21 +11,22 @@ Some of the items to note (most of this is based upon information in the GnuCash
 https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc, and might not have a direct feature in GnuCash):
 
 - Accounts:
-Only following GnuCash account types are supported:
- 	- Bank
- 	- Cash
- 	- Credit
- 	- Asset
- 	- Liability
- 	- Stock (Indirectly, becomes a commodity, not yet supported)
- 	- Mutual
- 	- Income
- 	- Expense
- 	- Equity
- 	- Root
- 	- Checking
- 	- Savings
- 	- Moneymrkt
+	- Only following GnuCash account types are supported:
+	 	- Bank
+	 	- Cash
+	 	- Credit
+	 	- Asset
+	 	- Liability
+	 	- Stock (Indirectly, becomes a commodity, not yet supported)
+	 	- Mutual
+	 	- Income
+	 	- Expense
+	 	- Equity
+	 	- Root
+	 	- Checking
+	 	- Savings
+	 	- Moneymrkt
+	 - If an Asset account contains Stock child accounts, the Asset account is mapped to a jGnash Investment Account.
 
 - Stocks:
     - Stocks are imported based upon the stock symbol, such as AAPL (cmdty:id in the XML file), the Type (NASDAQ, NYSE, etc.)

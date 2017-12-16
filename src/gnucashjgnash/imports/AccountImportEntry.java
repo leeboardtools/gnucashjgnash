@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
+import gnucashjgnash.imports.CommodityEntry.CommodityRef;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 
 class AccountImportEntry {
@@ -33,8 +34,7 @@ class AccountImportEntry {
     String name;
     IdEntry id = new IdEntry();
     String type;
-    String commoditySpace;
-    String commodityId;
+	CommodityRef commodityRef = new CommodityRef();
     String code;
     String description;
     IdEntry parentId = new IdEntry();
@@ -100,6 +100,17 @@ class AccountImportEntry {
                 
 			case "act:parent" :
 				return new IdEntry.IdStateHandler(this.accountEntry.parentId, this.contentHandler, this, qName);
+				
+			case "act:commodity" :
+				return new CommodityEntry.CommodityRefStateHandler(this.accountEntry.commodityRef, this.contentHandler, this, qName);
+				
+			case "act:commodity-scu" :
+				// Smallest currency unit
+				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+	                @Override
+	                protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
+	                }
+	            });
 
 			}
 
@@ -145,8 +156,11 @@ class AccountImportEntry {
     }
 
 
-
-    void gatherChildAccountEntries(Map<String, AccountImportEntry> accountEntries) {
+    /**
+     * Called by GnuCashToJGnashContentHandler to build the child AccountImportEntry objects for this entry.
+     * @param accountEntries
+     */
+    public void gatherChildAccountEntries(Map<String, AccountImportEntry> accountEntries) {
         for (Iterator<Map.Entry<String, AccountImportEntry>> iterator = accountEntries.entrySet().iterator(); iterator.hasNext(); ) {
             Map.Entry<String, AccountImportEntry> entry = iterator.next();
             AccountImportEntry accountEntry = entry.getValue();
@@ -162,44 +176,19 @@ class AccountImportEntry {
     }
 
 
-    boolean handleStockAccount(GnuCashToJGnashContentHandler contentHandler, Engine engine,
-                               Map<String, Account> jGnashAccountEntries, Set<String> accountIdsToIgnore) {
-    	// TODO AccountImportEntry.handleStockAccount()
-        CurrencyNode currencyNode = getCurrencyNode(engine);
-        SecurityNode securityNode = new SecurityNode(currencyNode);
-
-        if (this.description != null) {
-            securityNode.setDescription(this.description);
-        }
-/*        node.setDescription(descriptionTextField.getText());
-        node.setScale(scaleTextField.getInteger().byteValue());
-        node.setSymbol(symbolTextField.getText().trim());
-        node.setISIN(cusipTextField.getText());
-        node.setQuoteSource(quoteSourceComboBox.getValue());
-*/        return true;
-    }
-
-    boolean createJGnashAccounts(GnuCashToJGnashContentHandler contentHandler, Engine engine,
+    /**
+     * Called by GnuCashToJGnashContentHandler to generate the jGnash accounts for this and all the child AccountImportEntry objects.
+     * @param contentHandler
+     * @param engine
+     * @param jGnashAccountEntries
+     * @param accountIdsToIgnore
+     * @return
+     */
+    public boolean createJGnashAccounts(GnuCashToJGnashContentHandler contentHandler, Engine engine,
                                  Map<String, Account> jGnashAccountEntries, Set<String> accountIdsToIgnore) {
         // Can we generate the account?
         AccountType accountType = null;
-/*
-    //ASSET(ResourceUtils.getString("AccountType.Asset"), AccountGroup.ASSET, AccountProxy.class, true),
-    //BANK(ResourceUtils.getString("AccountType.Bank"), AccountGroup.ASSET, AccountProxy.class, true),
-    //CASH(ResourceUtils.getString("AccountType.Cash"), AccountGroup.ASSET, AccountProxy.class, true),
-    //CHECKING(ResourceUtils.getString("AccountType.Checking"), AccountGroup.ASSET, AccountProxy.class, true),
-    //CREDIT(ResourceUtils.getString("AccountType.Credit"), AccountGroup.LIABILITY, AccountProxy.class, true),
-    //EQUITY(ResourceUtils.getString("AccountType.Equity"), AccountGroup.EQUITY, AccountProxy.class, true),
-    //EXPENSE(ResourceUtils.getString("AccountType.Expense"), AccountGroup.EXPENSE, AccountProxy.class, true),
-    //INCOME(ResourceUtils.getString("AccountType.Income"), AccountGroup.INCOME, AccountProxy.class, true),
-    INVEST(ResourceUtils.getString("AccountType.Investment"), AccountGroup.INVEST, InvestmentAccountProxy.class, false),
-    SIMPLEINVEST(ResourceUtils.getString("AccountType.SimpleInvestment"), AccountGroup.SIMPLEINVEST, AccountProxy.class, true),
-    //LIABILITY(ResourceUtils.getString("AccountType.Liability"), AccountGroup.LIABILITY, AccountProxy.class, true),
-    //MONEYMKRT(ResourceUtils.getString("AccountType.MoneyMarket"), AccountGroup.ASSET, AccountProxy.class, true),
-    //MUTUAL(ResourceUtils.getString("AccountType.Mutual"), AccountGroup.INVEST, InvestmentAccountProxy.class, false),
-    //ROOT(ResourceUtils.getString("AccountType.Root"), AccountGroup.ROOT, AccountProxy.class, true);
 
- */
         switch (this.type) {
             case "NONE" :
                 accountIdsToIgnore.add(this.id.id);
@@ -218,7 +207,7 @@ class AccountImportEntry {
                 break;
 
             case "ASSET":
-                accountType = AccountType.ASSET;
+                accountType = detectInvestmentAccount(AccountType.ASSET);
                 break;
 
             case "LIABILITY":
@@ -333,6 +322,35 @@ class AccountImportEntry {
 
         return true;
     }
+
+    boolean handleStockAccount(GnuCashToJGnashContentHandler contentHandler, Engine engine,
+                               Map<String, Account> jGnashAccountEntries, Set<String> accountIdsToIgnore) {
+    	// We need to be able to refer to the stock account's security node from transactions.
+    	SecurityNode securityNode = contentHandler.jGnashSecurities.get(this.commodityRef.id);
+    	if (securityNode == null) {
+    		CurrencyNode currencyNode = contentHandler.jGnashCurrencies.get(this.commodityRef.id);
+    		if (currencyNode == null) {
+	    		contentHandler.recordWarning("StockAccountSecurityNotFound_" + this.commodityRef.id, "Message.Warning.StockAccountSecurityNotFound", this.id.id, this.commodityRef.id);
+	    		return false;
+    		}
+    	}
+    	
+    	contentHandler.jGnashSecuritiesByStockAccountId.put(this.id.id, securityNode);
+    			
+        return true;
+    }
+    
+    
+    AccountType detectInvestmentAccount(AccountType accountType) {
+    	// If the account has stock accounts as kids, then it's an investment account.
+    	for (Map.Entry<String, AccountImportEntry> entry : this.childAccountEntries.entrySet()) {
+    		if (entry.getValue().type.equals("STOCK")) {
+    			return AccountType.INVEST;
+    		}
+    	}
+    	return accountType;
+    }
+    
 
     CurrencyNode getCurrencyNode(Engine engine) {
         CurrencyNode currencyNode = engine.getDefaultCurrency();

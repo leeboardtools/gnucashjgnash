@@ -39,7 +39,7 @@
 	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-bayes-2.33.3.jar"/>
 	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-convert-2.33.3.jar"/>
 	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-core-2.33.3.jar" sourcepath="/media/albert/DataDrive/Albert/Projects/OpenSource/jgnash"/>
-	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-fx-2.33.3.jar"/>
+	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-fx-2.33.3.jar" sourcepath="/media/albert/DataDrive/Albert/Projects/OpenSource/jgnash"/>
 	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-plugin-2.33.3.jar"/>
 	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-report-core-2.33.3.jar"/>
 	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-resources-2.33.3.jar"/>

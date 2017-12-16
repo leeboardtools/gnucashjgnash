@@ -53,6 +53,8 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
     final Set<String> accountIdsToIgnore = new HashSet<>();
 
+    final Map<String, SecurityNode> jGnashSecuritiesByStockAccountId = new HashMap<>();
+    
     final Map<String, Account> jGnashAccounts = new HashMap<>();
 
     final Map<String, TransactionImportEntry> transactionEntries = new HashMap<>();
@@ -570,7 +572,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         for (Map.Entry<String, TransactionImportEntry> entry : this.transactionEntries.entrySet()) {
         	TransactionImportEntry transactionEntry = entry.getValue();
         	if (!transactionEntry.generateJGnashTransaction(this, this.engine)) {
-        		return false;
+        		//return false;
         	}
         }
 

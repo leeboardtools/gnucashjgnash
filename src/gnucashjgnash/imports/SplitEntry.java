@@ -26,6 +26,7 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandle
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 import jgnash.engine.Account;
 import jgnash.engine.ReconciledState;
+import jgnash.engine.SecurityNode;
 
 
 /**
@@ -47,11 +48,25 @@ public class SplitEntry {
     Account jGnashAccount;
     ReconciledState jGnashReconciledState;
     
+    SecurityNode jGnashSecurity;
+    
+    
     public boolean validateForJGnash(GnuCashToJGnashContentHandler contentHandler) {
 		this.jGnashAccount = contentHandler.jGnashAccounts.get(this.account.id);
 		if (this.jGnashAccount == null) {
-			contentHandler.recordWarning("SplitAccountMissing_" + this.id.id, "Message.Warning.SplitAccountMissing", this.id.id, this.account.id);
-			return false;
+			this.jGnashSecurity = contentHandler.jGnashSecuritiesByStockAccountId.get(this.account.id);
+			if (this.jGnashSecurity == null) {
+				contentHandler.recordWarning("SplitAccountMissing_" + this.account.id, "Message.Warning.SplitAccountMissing", this.id.id, this.account.id);
+				return false;
+			}
+			else {
+				AccountImportEntry accountEntry = contentHandler.accountImportEntries.get(this.account.id);
+				this.jGnashAccount = contentHandler.jGnashAccounts.get(accountEntry.parentId.id);
+				if (this.jGnashAccount == null) {
+					contentHandler.recordWarning("SplitSecurityAccountParentMissing_" + this.account.id, "Message.Warning.SplitSecurityAccountParentMissing", this.id.id, this.account.id);
+					return false;
+				}
+			}
 		}
 		
     	switch (this.reconciledState) {

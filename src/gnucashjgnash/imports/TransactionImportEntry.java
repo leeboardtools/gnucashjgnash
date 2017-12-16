@@ -162,7 +162,12 @@ public class TransactionImportEntry {
     }
 
     
-    
+    /**
+     * The main entry point for generating the jGnash transaction.
+     * @param contentHandler
+     * @param engine
+     * @return
+     */
     public boolean generateJGnashTransaction(GnuCashToJGnashContentHandler contentHandler, Engine engine) {
     	for (SplitEntry splitEntry : this.splitsList) {
     		if (!splitEntry.validateForJGnash(contentHandler)) {
@@ -181,20 +186,15 @@ public class TransactionImportEntry {
     	
     	// TODO There is a  slot with key date-posted and value type gdate, do we want to use that?
     	transaction.setDate(this.datePosted.localDate);
-    	
-    	if (this.splits.size() == 2) {
-    		final TransactionEntry transactionEntry = generateJGnashTransactionEntry(contentHandler, this.splitsList.get(0), this.splitsList.get(1));
-    		transaction.addTransactionEntry(transactionEntry);
-    	}
-    	else {
-    		if (!generateJGnashSplitTransactionEntries(contentHandler, transaction)) {
-    			return false;
-    		}
-    	}
+
+    	if (!generateJGnashSplitTransactionEntries(contentHandler, transaction)) {
+			return false;
+		}
     	
     	engine.addTransaction(transaction);
     	return true;
     }
+    
     
     protected boolean generateJGnashSplitTransactionEntries(GnuCashToJGnashContentHandler contentHandler, Transaction transaction) {
     	// Look for an account to serve as the main account. This will receive all the credits, and disburse all the debits.
@@ -252,6 +252,29 @@ public class TransactionImportEntry {
     		return false;
     	}
     	
+    	// Is this an investment transaction?
+    	ArrayList<SplitEntry> investmentSplitEntries = new ArrayList<>();
+    	for (SplitEntry splitEntry : this.splitsList) {
+    		if (splitEntry.jGnashSecurity != null) {
+    			investmentSplitEntries.add(splitEntry);
+    		}
+    	}
+    	
+    	// TEST!!!
+    	if (!investmentSplitEntries.isEmpty()) {
+    		System.out.print("_Investment Split Entries:");
+        	for (SplitEntry splitEntry : this.splitsList) {
+        		if (splitEntry.jGnashSecurity != null) {
+        			System.out.print("\t" + splitEntry.jGnashSecurity.getSymbol());
+        		}
+        		else {
+        			System.out.print("\t" + splitEntry.jGnashAccount.getName());
+        		}
+        		System.out.print("\t" + splitEntry.value.toBigDecimal() + "\t");
+        	}
+        	System.out.println();
+    	}
+    	
     	// We have our master account.
     	// Add all the credits to it and remove all the debits...
     	for (SplitEntry splitEntry : this.splitsList) {
@@ -259,29 +282,11 @@ public class TransactionImportEntry {
     			continue;
     		}
     		
-    		TransactionEntry transactionEntry = new TransactionEntry();
     		BigDecimal bigDecimalValue = splitEntry.value.toBigDecimal();
-    		if (bigDecimalValue.compareTo(BigDecimal.ZERO) < 0) {
-    			transactionEntry.setCreditAccount(masterSplitEntry.jGnashAccount);
-    			transactionEntry.setCreditAmount(bigDecimalValue.negate());
-    			transactionEntry.setDebitAccount(splitEntry.jGnashAccount);
-    			transactionEntry.setDebitAmount(bigDecimalValue);
-    		}
-    		else {
-    			transactionEntry.setDebitAccount(masterSplitEntry.jGnashAccount);
-    			transactionEntry.setDebitAmount(bigDecimalValue.negate());
-    			transactionEntry.setCreditAccount(splitEntry.jGnashAccount);
-    			transactionEntry.setCreditAmount(bigDecimalValue);
-    		}
-    		
-    		transactionEntry.setReconciled(masterSplitEntry.jGnashAccount, masterSplitEntry.jGnashReconciledState);
-    		transactionEntry.setReconciled(splitEntry.jGnashAccount, splitEntry.jGnashReconciledState);
-    		
-    		if (splitEntry.memo != null) {
-    			transactionEntry.setMemo(splitEntry.memo);
-    		}
-    		else if (masterSplitEntry.memo != null) {
-    			transactionEntry.setMemo(masterSplitEntry.memo);
+    		TransactionEntry transactionEntry = generateJGnashTransactionEntry(contentHandler,
+    				masterSplitEntry, bigDecimalValue.negate(), splitEntry, bigDecimalValue); 
+    		if (transactionEntry == null) {
+    			return false;
     		}
     		
     		transaction.addTransactionEntry(transactionEntry);
@@ -290,24 +295,45 @@ public class TransactionImportEntry {
     	return true;
     }
     
-    protected TransactionEntry generateJGnashTransactionEntry(GnuCashToJGnashContentHandler contentHandler, SplitEntry splitEntryA, SplitEntry splitEntryB) {
+    protected TransactionEntry generateJGnashTransactionEntry(GnuCashToJGnashContentHandler contentHandler, SplitEntry splitEntryA, BigDecimal amountA,
+    		SplitEntry splitEntryB, BigDecimal amountB) {
     	SplitEntry creditSplitEntry;
+    	BigDecimal creditAmount;
     	SplitEntry debitSplitEntry;
+    	BigDecimal debitAmount;
     	if (splitEntryA.value.toBigDecimal().compareTo(BigDecimal.ZERO) < 0) {
     		creditSplitEntry = splitEntryB;
+    		creditAmount = amountB;
     		debitSplitEntry = splitEntryA;
+    		debitAmount = amountA;
     	}
     	else {
     		creditSplitEntry = splitEntryA;
+    		creditAmount = amountA;
     		debitSplitEntry = splitEntryB;
+    		debitAmount = amountB;
     	}
-
-    	TransactionEntry transactionEntry = new TransactionEntry();
+    	
+    	// Special security transactions...
+    	TransactionEntry transactionEntry = null;
+    	if (creditSplitEntry.jGnashSecurity != null) {
+    		// Buy
+    	}
+    	else if (debitSplitEntry.jGnashSecurity != null) {
+    		// Sell
+    	}
+    	else {
+        	transactionEntry = new TransactionEntry();
+    	}
+    	if (transactionEntry == null) {
+    		return null;
+    	}
+    	
     	transactionEntry.setCreditAccount(creditSplitEntry.jGnashAccount);
     	transactionEntry.setDebitAccount(debitSplitEntry.jGnashAccount);
     	
-    	transactionEntry.setCreditAmount(creditSplitEntry.value.toBigDecimal());
-    	transactionEntry.setDebitAmount(debitSplitEntry.value.toBigDecimal());
+    	transactionEntry.setCreditAmount(creditAmount);
+    	transactionEntry.setDebitAmount(debitAmount);
     	
     	transactionEntry.setReconciled(creditSplitEntry.jGnashAccount, creditSplitEntry.jGnashReconciledState);
     	transactionEntry.setReconciled(debitSplitEntry.jGnashAccount, debitSplitEntry.jGnashReconciledState);
