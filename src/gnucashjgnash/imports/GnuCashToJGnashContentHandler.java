@@ -26,6 +26,8 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
 import gnucashjgnash.GnuCashConvertUtil;
+
+import java.time.LocalDate;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -47,6 +49,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     final Map<String, CurrencyNode> jGnashCurrencies = new HashMap<>();
 
     final Map<String, PriceEntry> priceEntries = new HashMap<>();
+    final Map<String, Map<LocalDate, PriceEntry>> sortedPriceEntries = new HashMap<>();
 
     final Map<String, AccountImportEntry> accountImportEntries = new HashMap<>();
     final Set<String> accountIdsInUse = new HashSet<>();
@@ -215,9 +218,9 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         public void stateHandlerReactivated() {
         }
 
-		protected StateHandler getStateHandlerForElement(String qName) {
-			return new NOP_StateHandler(this.contentHandler, this, qName);
-		}
+        protected StateHandler getStateHandlerForElement(String qName) {
+            return new NOP_StateHandler(this.contentHandler, this, qName);
+        }
         
         protected void endState() {
         }
@@ -252,19 +255,19 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
             super(contentHandler, null, null, null);
         }
 
-		/* (non-Javadoc)
-		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
-		 */
-		@Override
-		protected StateHandler getStateHandlerForElement(String qName) {
-			switch (qName) {
-			case "gnc-v2":
-				return new GNC_V2_StateHandler(this.contentHandler, this, qName); 
+        /* (non-Javadoc)
+         * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
+         */
+        @Override
+        protected StateHandler getStateHandlerForElement(String qName) {
+            switch (qName) {
+            case "gnc-v2":
+                return new GNC_V2_StateHandler(this.contentHandler, this, qName); 
 
-			}
+            }
 
-			return super.getStateHandlerForElement(qName);
-		}
+            return super.getStateHandlerForElement(qName);
+        }
 
     }
 
@@ -276,21 +279,21 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         }
 
         /* (non-Javadoc)
-		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
-		 */
-		@Override
-		protected StateHandler getStateHandlerForElement(String qName) {
-			switch (qName) {
-			case "gnc:count-data":
-				return new CountDataStateHandler(this.contentHandler, this, qName);
+         * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
+         */
+        @Override
+        protected StateHandler getStateHandlerForElement(String qName) {
+            switch (qName) {
+            case "gnc:count-data":
+                return new CountDataStateHandler(this.contentHandler, this, qName);
 
-			case "gnc:book":
-				return new BookStateHandler(this.contentHandler, this, qName);
-			}
-			return super.getStateHandlerForElement(qName);
-		}
+            case "gnc:book":
+                return new BookStateHandler(this.contentHandler, this, qName);
+            }
+            return super.getStateHandlerForElement(qName);
+        }
 
-		@Override
+        @Override
         protected void endState() {
             super.endState();
             System.out.println("GNC_V2_StateHandler.endState()...");
@@ -368,37 +371,37 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
             super(contentHandler, parentStateHandler, elementName, null);
         }
 
-		/* (non-Javadoc)
-		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
-		 */
-		@Override
-		protected StateHandler getStateHandlerForElement(String qName) {
-			switch (qName) {
-			case "book:id" :
-				return new IdEntry.IdStateHandler(this.contentHandler.bookId, this.contentHandler, this, qName);
-				
-			case "book:slots" :
-				return new SlotEntry.SlotsStateHandler(this.contentHandler.bookSlots, this.contentHandler, this, qName);
-				
-			case "gnc:transaction" :
-				return new TransactionImportEntry.TransactionStateHandler(this.contentHandler, this, qName);
-				
-			case "gnc:account":
+        /* (non-Javadoc)
+         * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
+         */
+        @Override
+        protected StateHandler getStateHandlerForElement(String qName) {
+            switch (qName) {
+            case "book:id" :
+                return new IdEntry.IdStateHandler(this.contentHandler.bookId, this.contentHandler, this, qName);
+                
+            case "book:slots" :
+                return new SlotEntry.SlotsStateHandler(this.contentHandler.bookSlots, this.contentHandler, this, qName);
+                
+            case "gnc:transaction" :
+                return new TransactionImportEntry.TransactionStateHandler(this.contentHandler, this, qName);
+                
+            case "gnc:account":
                 return new AccountImportEntry.AccountStateHandler(this.contentHandler, this, qName);
                 
-			case "gnc:commodity":
-				return new CommodityEntry.CommodityStateHandler(this.contentHandler, this, qName);
-				
-			case "gnc:pricedb" :
-				return new PriceEntry.PriceDBStateHandler(this.contentHandler, this, qName);
+            case "gnc:commodity":
+                return new CommodityEntry.CommodityStateHandler(this.contentHandler, this, qName);
+                
+            case "gnc:pricedb" :
+                return new PriceEntry.PriceDBStateHandler(this.contentHandler, this, qName);
 
-			case "gnc:count-data" :
-				return new CountDataStateHandler(this.contentHandler, this, qName);
-				
-			}
+            case "gnc:count-data" :
+                return new CountDataStateHandler(this.contentHandler, this, qName);
+                
+            }
 
-			return super.getStateHandlerForElement(qName);
-		}
+            return super.getStateHandlerForElement(qName);
+        }
     }
 
 
@@ -451,6 +454,21 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     void recordError(String key, Object ... arguments) {
         this.errorMsg = GnuCashConvertUtil.getString(key, arguments);
     }
+    
+    boolean addPriceEntry(PriceEntry priceEntry) {
+        String securityId = priceEntry.commodityRef.id;
+        Map<LocalDate, PriceEntry> priceEntriesForSecurity = this.sortedPriceEntries.get(securityId);
+        if (priceEntriesForSecurity == null) {
+            priceEntriesForSecurity = new TreeMap<LocalDate, PriceEntry>();
+            this.sortedPriceEntries.put(securityId, priceEntriesForSecurity);
+        }
+        
+        if (priceEntriesForSecurity.put(priceEntry.time.localDate, priceEntry) != null) {
+            recordWarning("DuplicatePriceEntry", "Message.Parse.XMLDuplicatePriceEntry", securityId, priceEntry.time.toDateString());
+        }
+        
+        return true;
+    }
 
 
     public boolean generateJGnashDatabase() {
@@ -469,7 +487,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         }
         
         if (!processTransactions()) {
-        	return false;
+                return false;
         }
         
         // TODO scheduled transactions
@@ -496,12 +514,38 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
 
     protected boolean setupPrices() {
-        for (Map.Entry<String, PriceEntry> entry : this.priceEntries.entrySet()) {
-            PriceEntry priceEntry = entry.getValue();
-            if (!priceEntry.generateJGnashSecurityHistoryNode(this, this.engine)) {
+        for (Map.Entry<String, Map<LocalDate, PriceEntry>> entry : this.sortedPriceEntries.entrySet()) {
+            SecurityNode securityNode = this.jGnashSecurities.get(entry.getKey());
+            if (securityNode == null) {
+                continue;
+            }
+            
+            if (!setupPricesForAccount(securityNode, entry.getValue())) {
                 return false;
             }
         }
+
+        return true;
+    }
+    
+    protected boolean setupPricesForAccount(SecurityNode securityNode, Map<LocalDate, PriceEntry> priceEntriesByDate) {
+    		int count = 0;
+        for (Map.Entry<LocalDate, PriceEntry> entry : priceEntriesByDate.entrySet()) {
+            LocalDate localDate = entry.getKey();
+            // TEST!!!
+            if (localDate.getYear() < 2017) {
+                continue;
+            }
+            
+	        PriceEntry priceEntry = entry.getValue();
+	        if (!priceEntry.generateJGnashSecurityHistoryNode(this, this.engine, securityNode)) {
+	            return false;
+	        }
+	        
+	        ++count;
+        }
+        
+        LOG.info("Added " + count + " prices for security " + securityNode.getSymbol());
         return true;
     }
 
@@ -569,14 +613,19 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
             }
         }
         
+        int count = 0;
         for (Map.Entry<String, TransactionImportEntry> entry : this.transactionEntries.entrySet()) {
-        	TransactionImportEntry transactionEntry = entry.getValue();
-        	if (!transactionEntry.generateJGnashTransaction(this, this.engine)) {
-        		//return false;
-        	}
+            TransactionImportEntry transactionEntry = entry.getValue();
+            if (!transactionEntry.generateJGnashTransaction(this, this.engine)) {
+                //return false;
+            		continue;
+            }
+            ++count;
         }
-
-    	return true;
+        
+        LOG.info("Processed " + count + " transactions.");
+    
+        return true;
     }
 
 }

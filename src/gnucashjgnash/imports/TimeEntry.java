@@ -41,31 +41,31 @@ public class TimeEntry {
             this.timeEntry = timeEntry;
         }
 
-		/* (non-Javadoc)
-		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
-		 */
-		@Override
-		protected StateHandler getStateHandlerForElement(String qName) {
-			switch (qName) {
-			case "ts:date":
-				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
-	                @Override
-	                protected void setTimeEntryField(TimeEntry timeEntry, String value) {
-	                    try {
-	                        timeEntry.parseError = null;
-	                        timeEntry.localDate = LocalDate.parse(value, DATE_TIME_FORMATTER);
-	                        timeEntry.offsetTime = OffsetTime.parse(value, DATE_TIME_FORMATTER);
-	                    }
-	                    catch (DateTimeParseException e) {
-	                        timeEntry.parseError = e.getLocalizedMessage();
-	                    }
-	                }
-	            });
+        /* (non-Javadoc)
+         * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
+         */
+        @Override
+        protected StateHandler getStateHandlerForElement(String qName) {
+            switch (qName) {
+            case "ts:date":
+                return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+                    @Override
+                    protected void setTimeEntryField(TimeEntry timeEntry, String value) {
+                        try {
+                            timeEntry.parseError = null;
+                            timeEntry.localDate = LocalDate.parse(value, DATE_TIME_FORMATTER);
+                            timeEntry.offsetTime = OffsetTime.parse(value, DATE_TIME_FORMATTER);
+                        }
+                        catch (DateTimeParseException e) {
+                            timeEntry.parseError = e.getLocalizedMessage();
+                        }
+                    }
+                });
  
-			}
+            }
 
-			return super.getStateHandlerForElement(qName);
-		}
+            return super.getStateHandlerForElement(qName);
+        }
     }
 
     static abstract class SimpleDataSetterImpl extends GnuCashToJGnashContentHandler.AbstractSimpleDataSetter {
@@ -85,5 +85,10 @@ public class TimeEntry {
             return false;
         }
         return true;
+    }
+    
+    
+    public String toDateString() {
+        return this.localDate.format(DateTimeFormatter.ISO_LOCAL_DATE);
     }
 }

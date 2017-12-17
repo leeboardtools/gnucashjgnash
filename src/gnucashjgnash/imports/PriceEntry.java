@@ -90,10 +90,7 @@ public class PriceEntry {
                 return;
             }
 
-            if (this.contentHandler.priceEntries.containsKey(this.priceEntry.id.id)) {
-                recordWarning("DuplicatePriceEntry", "Message.Parse.XMLDuplicatePriceEntry", this.priceEntry.id.id);
-            }
-            this.contentHandler.priceEntries.put(this.priceEntry.id.id, this.priceEntry);
+            this.contentHandler.addPriceEntry(priceEntry);
         }
 
         @Override
@@ -115,12 +112,12 @@ public class PriceEntry {
                     return new NumericEntry.NumericStateHandler(this.priceEntry.value, this.contentHandler, this, qName);
                     
                 case "price:source":
-    				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
-	    	                @Override
-	    	                protected void setPriceEntryField(PriceEntry priceEntry, String value) {
-	    	                    priceEntry.source = value;
-	    	                }
-	    	            }); 
+                    return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+                            @Override
+                            protected void setPriceEntryField(PriceEntry priceEntry, String value) {
+                                priceEntry.source = value;
+                            }
+                        }); 
             }
 
             return super.getStateHandlerForElement(qName);
@@ -139,15 +136,25 @@ public class PriceEntry {
 
 
 
-    public boolean generateJGnashSecurityHistoryNode(GnuCashToJGnashContentHandler contentHandler, Engine engine) {
-        SecurityNode securityNode = contentHandler.jGnashSecurities.get(this.commodityRef.id);
+    public boolean generateJGnashSecurityHistoryNode(GnuCashToJGnashContentHandler contentHandler, Engine engine, SecurityNode securityNode) {
         if (securityNode == null) {
-            contentHandler.recordWarning("PriceCommodityMissing_" + this.commodityRef.id, "Message.Warning.PriceCommodityMissing", this.commodityRef.id);
-            return true;
+	        securityNode = contentHandler.jGnashSecurities.get(this.commodityRef.id);
+	        if (securityNode == null) {
+	            contentHandler.recordWarning("PriceCommodityMissing_" + this.commodityRef.id, "Message.Warning.PriceCommodityMissing", this.commodityRef.id);
+	            return true;
+	        }
         }
 
         LocalDate date = this.time.localDate;
-        BigDecimal price = this.value.toBigDecimal();
+        BigDecimal price = null;
+        try {
+            price = this.value.toBigDecimal();
+        }
+        catch (Exception e) {
+            contentHandler.recordWarning("SecurityHistoryPriceInvalid_" + this.commodityRef.id, "Message.Warning.SecurityHistoryValueInvalid", this.commodityRef.id);
+            return true;
+        }
+        
         BigDecimal high = price;
         BigDecimal low = price;
         long volume = 0;
