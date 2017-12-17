@@ -67,7 +67,7 @@ public class PriceEntry {
 
         PriceStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
                           String elementName) {
-            super(contentHandler, parentStateHandler, elementName, null);
+            super(contentHandler, parentStateHandler, elementName);
         }
 
         @Override
@@ -116,6 +116,14 @@ public class PriceEntry {
                             @Override
                             protected void setPriceEntryField(PriceEntry priceEntry, String value) {
                                 priceEntry.source = value;
+                            }
+                        }); 
+                    
+                case "price:type":
+                    return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+                            @Override
+                            protected void setPriceEntryField(PriceEntry priceEntry, String value) {
+                                priceEntry.type = value;
                             }
                         }); 
             }

@@ -66,7 +66,10 @@ public class ImportGnuCashAction {
         final Preferences pref = Preferences.userNodeForPackage(ImportGnuCashAction.class);
         final FileChooser fileChooser = new FileChooser();
 
-        fileChooser.setInitialDirectory(new File(pref.get(LAST_DIR, System.getProperty("user.home"))));
+        File initialDir = new File(pref.get(LAST_DIR, System.getProperty("user.home")));
+        if (initialDir.exists()) {
+        	fileChooser.setInitialDirectory(initialDir);
+        }
 
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("GnuCash Files (*.gnucash)", "*.gnucash", "*.xml")

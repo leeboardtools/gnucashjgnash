@@ -27,7 +27,7 @@ public class NumericEntry {
         final NumericEntry numericEntry;
         NumericStateHandler(final NumericEntry numericEntry, GnuCashToJGnashContentHandler contentHandler,
                           GnuCashToJGnashContentHandler.StateHandler parentStateHandler, String elementName) {
-            super(contentHandler, parentStateHandler, elementName, null);
+            super(contentHandler, parentStateHandler, elementName);
             this.numericEntry = numericEntry;
         }
 

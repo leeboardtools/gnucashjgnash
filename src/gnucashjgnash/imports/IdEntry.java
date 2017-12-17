@@ -28,7 +28,7 @@ public class IdEntry {
 
         IdStateHandler(final IdEntry idEntry, GnuCashToJGnashContentHandler contentHandler,
                        GnuCashToJGnashContentHandler.StateHandler parentStateHandler, String elementName) {
-            super(contentHandler, parentStateHandler, elementName, null);
+            super(contentHandler, parentStateHandler, elementName);
             this.idEntry = idEntry;
         }
 

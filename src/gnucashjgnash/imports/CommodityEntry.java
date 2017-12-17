@@ -209,7 +209,7 @@ public class CommodityEntry {
         final CommodityRef commodityRef;
         CommodityRefStateHandler(final CommodityRef commodityRef, GnuCashToJGnashContentHandler contentHandler,
                                  GnuCashToJGnashContentHandler.StateHandler parentStateHandler, String elementName) {
-            super(contentHandler, parentStateHandler, elementName, null);
+            super(contentHandler, parentStateHandler, elementName);
             this.commodityRef = commodityRef;
         }
         

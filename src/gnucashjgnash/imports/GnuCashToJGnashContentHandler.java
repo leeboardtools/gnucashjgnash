@@ -148,6 +148,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
 
     interface StateHandler {
+    	String getElementName();
         void handleStateAttributes(Attributes atts);
 
         void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException;
@@ -177,11 +178,15 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         boolean ignoreChildElements = false;
 
         AbstractStateHandler(final GnuCashToJGnashContentHandler contentHandler,
-                             final StateHandler parentStateHandler, final String elementName,
-                             final Map<String, StateHandlerCreator> qNameToStateHandlers) {
+                             final StateHandler parentStateHandler, final String elementName) {
             this.contentHandler = contentHandler;
             this.parentStateHandler = parentStateHandler;
             this.elementName = elementName;
+        }
+        
+        @Override
+        public String getElementName() { 
+        	return elementName; 
         }
 
         @Override
@@ -236,23 +241,60 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     static class NOP_StateHandler extends AbstractStateHandler {
         NOP_StateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
                          String elementName) {
-            super(contentHandler, parentStateHandler, elementName,null);
+            super(contentHandler, parentStateHandler, elementName);
         }
 
         @Override
         protected void endState() {
             super.endState();
-            System.out.println("NOP_StateHandler.endState()..." + this.elementName);
+            String namePath = "";
+            String separator = "";
+            for (StateHandler stateHandler : this.contentHandler.stateHandlers) {
+            	namePath += separator + stateHandler.getElementName();
+            	separator = ">";
+            }
+            System.out.println("NOP_StateHandler.endState()..." + namePath);
         }
 
     }
 
+    
+    static class SkipStateHandler extends AbstractStateHandler {
+
+		SkipStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
+				String elementName) {
+			super(contentHandler, parentStateHandler, elementName);
+		}
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
+		 */
+		@Override
+		public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+		}
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#endState()
+		 */
+		@Override
+		protected void endState() {
+            String namePath = "";
+            String separator = "";
+            for (StateHandler stateHandler : this.contentHandler.stateHandlers) {
+            	namePath += separator + stateHandler.getElementName();
+            	separator = ">";
+            }
+			System.out.println("SkipStateHandler.endState()..." + namePath);
+		}
+    	
+		
+    }
 
 
     static class OuterStateHandler extends AbstractStateHandler {
 
         OuterStateHandler(GnuCashToJGnashContentHandler contentHandler) {
-            super(contentHandler, null, null, null);
+            super(contentHandler, null, null);
         }
 
         /* (non-Javadoc)
@@ -274,7 +316,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
     static class GNC_V2_StateHandler extends AbstractStateHandler {
         GNC_V2_StateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler, String elementName) {
-            super(contentHandler, parentStateHandler, elementName, null);
+            super(contentHandler, parentStateHandler, elementName);
 
         }
 
@@ -306,7 +348,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
         CountDataStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
                                     String elementName) {
-            super(contentHandler, parentStateHandler, elementName,null);
+            super(contentHandler, parentStateHandler, elementName);
         }
 
         @Override
@@ -342,7 +384,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
         AbstractVersionStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler, String elementName,
                                     Map<String, StateHandlerCreator> qNameToStateHandlers) {
-            super(contentHandler, parentStateHandler, elementName, qNameToStateHandlers);
+            super(contentHandler, parentStateHandler, elementName);
         }
 
         @Override
@@ -398,6 +440,12 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
             case "gnc:count-data" :
                 return new CountDataStateHandler(this.contentHandler, this, qName);
                 
+                
+            case "gnc:template-transactions":
+            case "gnc:schedxaction":
+            case "gnc:budget":
+            	return new SkipStateHandler(this.contentHandler, this, qName);
+                
             }
 
             return super.getStateHandlerForElement(qName);
@@ -420,7 +468,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     public static class SimpleDataStateHandler extends AbstractStateHandler {
         final SimpleDataSetter dataSetter;
         SimpleDataStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler, String elementName, SimpleDataSetter dataSetter) {
-            super(contentHandler, parentStateHandler, elementName, null);
+            super(contentHandler, parentStateHandler, elementName);
             this.dataSetter = dataSetter;
         }
 

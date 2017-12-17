@@ -99,7 +99,7 @@ public class SplitEntry {
         SplitsStateHandler(final Map<String, SplitEntry> splitEntries, final List<SplitEntry> splitEntriesList, final String splitElementName,
         					GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
         					String elementName) {
-            super(contentHandler, parentStateHandler, elementName, null);
+            super(contentHandler, parentStateHandler, elementName);
             this.splitEntries = splitEntries;
             this.splitEntriesList = splitEntriesList;
             this.splitElementName = splitElementName;
@@ -129,7 +129,7 @@ public class SplitEntry {
         SplitStateHandler(final Map<String, SplitEntry> splitEntries, final List<SplitEntry> splitEntriesList, 
         				GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
                         String elementName) {
-            super(contentHandler, parentStateHandler, elementName, null);
+            super(contentHandler, parentStateHandler, elementName);
             this.splitEntries = splitEntries;
             this.splitEntriesList = splitEntriesList;
         }
@@ -166,6 +166,9 @@ public class SplitEntry {
 		                    splitEntry.reconciledState = value;
 		                }
 		            });
+				
+			case "split:reconcile-date" :
+				return new TimeEntry.TimeStateHandler(this.splitEntry.reconcileDate, this.contentHandler, this, qName);
 				
 			case "split:value" : 
 				return new NumericEntry.NumericStateHandler(this.splitEntry.value, this.contentHandler, this, qName);

@@ -37,7 +37,7 @@ public class TimeEntry {
 
         TimeStateHandler(final TimeEntry timeEntry, GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
                      String elementName) {
-            super(contentHandler, parentStateHandler, elementName, null);
+            super(contentHandler, parentStateHandler, elementName);
             this.timeEntry = timeEntry;
         }
 
