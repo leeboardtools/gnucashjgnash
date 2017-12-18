@@ -25,6 +25,7 @@ import org.xml.sax.Attributes;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 import jgnash.engine.Account;
+import jgnash.engine.AccountGroup;
 import jgnash.engine.AccountType;
 import jgnash.engine.ReconciledState;
 import jgnash.engine.SecurityNode;
@@ -70,7 +71,7 @@ public class SplitEntry {
 			}
 		}
 		else {
-			if (this.jGnashAccount.getAccountType() == AccountType.MUTUAL) {
+			if (this.jGnashAccount.memberOf(AccountGroup.INVEST)) {
 				this.jGnashSecurity = contentHandler.jGnashSecuritiesByStockAccountId.get(this.account.id);
 			}
 		}

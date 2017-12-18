@@ -260,10 +260,27 @@ public class TransactionImportEntry {
 	    			Account jGnashAccount = contentHandler.jGnashAccounts.get(splitEntry.account.id);
 	    			if (jGnashAccount != null) {
 	    				switch (jGnashAccount.getAccountType()) {
+	    				case ASSET:
+	    				case BANK:
+	    				case CASH:
+	    				case CHECKING:
 						case INVEST:
 						case MUTUAL :
 							if (account != null) {
 								// TODO Record Warning
+					            System.out.print("Multiple Investment Transaction Accounts: _Investment Split Entries:");
+					            System.out.print("\t" + this.datePosted.localDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
+					            for (SplitEntry entry : this.splitsList) {
+					                if (splitEntry.jGnashSecurity != null) {
+					                    System.out.print("\t" + entry.jGnashSecurity.getSymbol());
+					                }
+					                else {
+					                    System.out.print("\t" + entry.jGnashAccount.getName());
+					                }
+					                System.out.print("\t" + entry.value.toBigDecimal() + "\t");
+					            }
+					            System.out.println();
+								
 								return false;
 							}
 							accountSplitEntry = splitEntry;
@@ -334,12 +351,12 @@ public class TransactionImportEntry {
             System.out.print("\t" + this.datePosted.localDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
             for (SplitEntry splitEntry : this.splitsList) {
                 if (splitEntry.jGnashSecurity != null) {
-                    System.out.print("\t" + splitEntry.jGnashSecurity.getSymbol());
+                    System.out.print("\t[" + splitEntry.jGnashSecurity.getSymbol() + "]");
                 }
                 else {
                     System.out.print("\t" + splitEntry.jGnashAccount.getName());
                 }
-                System.out.print("\t" + splitEntry.value.toBigDecimal() + "\t");
+                System.out.print("\t" + splitEntry.value.toBigDecimal() + "\t" + splitEntry.quantity.toBigDecimal() + "\t");
             }
             System.out.println();
     		return true;
@@ -356,6 +373,10 @@ public class TransactionImportEntry {
             final LocalDate date, final String memo,
             final Collection<TransactionEntry> fees) {
     */
+    
+    final static SplitEntry assignEntryIfNull(SplitEntry refEntry, SplitEntry newEntry) {
+    	return (refEntry == null) ? newEntry : refEntry;
+    }
     
     protected boolean generateJGnashSplitTransactionEntries(GnuCashToJGnashContentHandler contentHandler, Transaction transaction) {
         // Look for an account to serve as the main account. This will receive all the credits, and disburse all the debits.
@@ -375,31 +396,31 @@ public class TransactionImportEntry {
             case BANK :
             case CASH :
             case CHECKING :
-                masterSplitEntry = splitEntry;
+                masterSplitEntry = assignEntryIfNull(masterSplitEntry, splitEntry);
                 break;
                 
             case ASSET :
-                assetSplitEntry = splitEntry;
+                assetSplitEntry = assignEntryIfNull(assetSplitEntry, splitEntry);
                 break;
                 
             case CREDIT:
-                creditSplitEntry = splitEntry;
+                creditSplitEntry = assignEntryIfNull(creditSplitEntry, splitEntry);
                 break;
                 
             case INVEST :
-                investSplitEntry = splitEntry;
+                investSplitEntry = assignEntryIfNull(investSplitEntry, splitEntry);
                 break;
                 
             case SIMPLEINVEST :
-                simpleInvestSplitEntry = splitEntry;
+                simpleInvestSplitEntry = assignEntryIfNull(simpleInvestSplitEntry, splitEntry);
                 break;
                 
             case INCOME :
-            	incomeSplitEntry = splitEntry;
+            	incomeSplitEntry = assignEntryIfNull(incomeSplitEntry, splitEntry);
             	break;
             	
             case EXPENSE :
-            	expenseSplitEntry = splitEntry;
+            	expenseSplitEntry = assignEntryIfNull(expenseSplitEntry, splitEntry);
             	break;
                 
             default :

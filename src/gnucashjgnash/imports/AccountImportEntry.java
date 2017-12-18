@@ -188,6 +188,7 @@ class AccountImportEntry {
                                  Map<String, Account> jGnashAccountEntries, Set<String> accountIdsToIgnore) {
         // Can we generate the account?
         AccountType accountType = null;
+        boolean hasSecurities = false;
 
         switch (this.type) {
             case "NONE" :
@@ -195,11 +196,11 @@ class AccountImportEntry {
                 return true;
 
             case "BANK" :
-                accountType = detectInvestmentAccount(AccountType.BANK);
+                accountType = AccountType.BANK;
                 break;
 
             case "CASH" :
-                accountType = detectInvestmentAccount(AccountType.CASH);
+                accountType = AccountType.CASH;
                 break;
 
             case "CREDIT":
@@ -207,7 +208,7 @@ class AccountImportEntry {
                 break;
 
             case "ASSET":
-                accountType = detectInvestmentAccount(AccountType.ASSET);
+                accountType = AccountType.ASSET;
                 break;
 
             case "LIABILITY":
@@ -215,13 +216,13 @@ class AccountImportEntry {
                 break;
 
             case "STOCK":
-                return handleStockAccount(contentHandler, engine, jGnashAccountEntries, accountIdsToIgnore);
+            	accountType = AccountType.INVEST;
+            	hasSecurities = true;
+            	break;
 
             case "MUTUAL":
-            	if (isTreatMutualFundAsStock(contentHandler)) {
-                    return handleStockAccount(contentHandler, engine, jGnashAccountEntries, accountIdsToIgnore);
-            	}
                 accountType = AccountType.MUTUAL;
+            	hasSecurities = true;
                 break;
 
             case "CURRENCY":
@@ -259,14 +260,12 @@ class AccountImportEntry {
                 return true;
 
             case "CHECKING":
-                accountType = detectInvestmentAccount(AccountType.CHECKING);
+                accountType = AccountType.CHECKING;
                 break;
 
             case "SAVINGS":
-                accountType = detectInvestmentAccount(AccountType.CHECKING);
-                if (accountType == AccountType.CHECKING) {
-                	contentHandler.recordWarning("SavingsAsChecking", "Message.Info.AccountMapped", this.type, "CHECKING");
-                }
+                accountType = AccountType.CHECKING;
+               	contentHandler.recordWarning("SavingsAsChecking", "Message.Info.AccountMapped", this.type, "CHECKING");
                 break;
 
             case "MONEYMRKT":
@@ -307,18 +306,17 @@ class AccountImportEntry {
                 }
             }
             
-            if (accountType == AccountType.MUTUAL) {
-            	if (!setupMutualFundAccount(newAccount, contentHandler, engine,
-                        jGnashAccountEntries, accountIdsToIgnore)) {
-            		return false;
-            	}
-            }
-
             if ("true".equals(SlotEntry.getStringSlotValue(this.slots, "placeholder", null))) {
                 newAccount.setPlaceHolder(true);
             }
             if ("true".equals(SlotEntry.getStringSlotValue(this.slots, "hidden", null))) {
                 newAccount.setVisible(false);
+            }
+            
+            if (hasSecurities) {
+            	if (!setupAccountSecurities(newAccount, contentHandler)) {
+            		return false;
+            	}
             }
 
             engine.addAccount(parentAccount, newAccount);
@@ -335,9 +333,8 @@ class AccountImportEntry {
         return true;
     }
 
-    boolean handleStockAccount(GnuCashToJGnashContentHandler contentHandler, Engine engine,
-                               Map<String, Account> jGnashAccountEntries, Set<String> accountIdsToIgnore) {
-    	// We need to be able to refer to the stock account's security node from transactions.
+    
+    boolean setupAccountSecurities(Account account, GnuCashToJGnashContentHandler contentHandler) {
     	SecurityNode securityNode = contentHandler.jGnashSecurities.get(this.commodityRef.id);
     	if (securityNode == null) {
     		CurrencyNode currencyNode = contentHandler.jGnashCurrencies.get(this.commodityRef.id);
@@ -350,54 +347,11 @@ class AccountImportEntry {
     	
     	contentHandler.jGnashSecuritiesByStockAccountId.put(this.id.id, securityNode);
     	
-    	Account jGnashParentAccount = contentHandler.jGnashAccounts.get(this.parentId.id);
-    	if (jGnashParentAccount != null) {
-    		jGnashParentAccount.addSecurity(securityNode);
-    	}
-    			
-        return true;
-    }
-    
-    
-    boolean setupMutualFundAccount(Account account, GnuCashToJGnashContentHandler contentHandler, Engine engine,
-                               Map<String, Account> jGnashAccountEntries, Set<String> accountIdsToIgnore) {
-    	// We need to be able to refer to the stock account's security node from transactions.
-    	SecurityNode securityNode = contentHandler.jGnashSecurities.get(this.commodityRef.id);
-    	if (securityNode == null) {
-    		CurrencyNode currencyNode = contentHandler.jGnashCurrencies.get(this.commodityRef.id);
-    		if (currencyNode == null) {
-	    		contentHandler.recordWarning("MutualFundAccountSecurityNotFound_" + this.commodityRef.id, "Message.Warning.MutualFundAccountSecurityNotFound", 
-	    				this.id.id, this.commodityRef.id);
-	    		return false;
-    		}
-    	}
-    	
-    	contentHandler.jGnashSecuritiesByStockAccountId.put(this.id.id, securityNode);
     	account.addSecurity(securityNode);
     	return true;
     }
-    
-    
-    AccountType detectInvestmentAccount(AccountType accountType) {
-    	// If the account has stock accounts as kids, then it's an investment account.
-    	for (Map.Entry<String, AccountImportEntry> entry : this.childAccountEntries.entrySet()) {
-    		if (entry.getValue().type.equals("STOCK")) {
-    			return AccountType.INVEST;
-    		}
-    	}
-    	return accountType;
-    }
-    
-    
-    boolean isTreatMutualFundAsStock(GnuCashToJGnashContentHandler contentHandler) {
-    	Account jGnashParentAccount = contentHandler.jGnashAccounts.get(this.parentId.id);
-    	if ((jGnashParentAccount != null) && (jGnashParentAccount.getAccountType() == AccountType.INVEST)) {
-    		return true;
-    	}
-    	return false;
-    }
-    
 
+    
     CurrencyNode getCurrencyNode(Engine engine) {
         CurrencyNode currencyNode = engine.getDefaultCurrency();
         return currencyNode;

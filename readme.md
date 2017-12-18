@@ -18,14 +18,14 @@ https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc
 	 	- Credit
 	 	- Asset
 	 	- Liability
-	 	- Stock (Indirectly, becomes a commodity, not yet supported)
+	 	- Stock (converted to jGnash Investment)
 	 	- Mutual
 	 	- Income
 	 	- Expense
 	 	- Equity
 	 	- Root
 	 	- Checking
-	 	- Savings
+	 	- Savings (converted to jGnash Checking)
 	 	- Moneymrkt
 	 - If an Asset account contains Stock child accounts, the Asset account is mapped to a jGnash Investment Account.
 
@@ -44,7 +44,7 @@ https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc
     - The source (price:source) is ignored.
 
 - Transactions:
-    - Transaction lots are not yet supported.
+    - Transaction lots are not supported.
     - The post date is used, not the entered date.
     - If both the credit and debit sides of a transaction entry pair have a memo, the memo for the credit side is the one used.
 	
