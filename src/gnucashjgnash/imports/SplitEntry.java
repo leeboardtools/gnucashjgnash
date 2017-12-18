@@ -25,6 +25,7 @@ import org.xml.sax.Attributes;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 import jgnash.engine.Account;
+import jgnash.engine.AccountType;
 import jgnash.engine.ReconciledState;
 import jgnash.engine.SecurityNode;
 
@@ -66,6 +67,11 @@ public class SplitEntry {
 					contentHandler.recordWarning("SplitSecurityAccountParentMissing_" + this.account.id, "Message.Warning.SplitSecurityAccountParentMissing", this.id.id, this.account.id);
 					return false;
 				}
+			}
+		}
+		else {
+			if (this.jGnashAccount.getAccountType() == AccountType.MUTUAL) {
+				this.jGnashSecurity = contentHandler.jGnashSecuritiesByStockAccountId.get(this.account.id);
 			}
 		}
 		

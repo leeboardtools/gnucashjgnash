@@ -195,11 +195,11 @@ class AccountImportEntry {
                 return true;
 
             case "BANK" :
-                accountType = AccountType.BANK;
+                accountType = detectInvestmentAccount(AccountType.BANK);
                 break;
 
             case "CASH" :
-                accountType = AccountType.CASH;
+                accountType = detectInvestmentAccount(AccountType.CASH);
                 break;
 
             case "CREDIT":
@@ -218,6 +218,9 @@ class AccountImportEntry {
                 return handleStockAccount(contentHandler, engine, jGnashAccountEntries, accountIdsToIgnore);
 
             case "MUTUAL":
+            	if (isTreatMutualFundAsStock(contentHandler)) {
+                    return handleStockAccount(contentHandler, engine, jGnashAccountEntries, accountIdsToIgnore);
+            	}
                 accountType = AccountType.MUTUAL;
                 break;
 
@@ -256,12 +259,14 @@ class AccountImportEntry {
                 return true;
 
             case "CHECKING":
-                accountType = AccountType.CHECKING;
+                accountType = detectInvestmentAccount(AccountType.CHECKING);
                 break;
 
             case "SAVINGS":
-                contentHandler.recordWarning("SavingsAsChecking", "Message.Info.AccountMapped", this.type, "CHECKING");
-                accountType = AccountType.CHECKING;
+                accountType = detectInvestmentAccount(AccountType.CHECKING);
+                if (accountType == AccountType.CHECKING) {
+                	contentHandler.recordWarning("SavingsAsChecking", "Message.Info.AccountMapped", this.type, "CHECKING");
+                }
                 break;
 
             case "MONEYMRKT":
@@ -301,6 +306,13 @@ class AccountImportEntry {
                     contentHandler.recordWarning("NonIntegerAccountCode_" + this.name, "Message.Warning.NonIntegerAccountCode", this.name, this.code);
                 }
             }
+            
+            if (accountType == AccountType.MUTUAL) {
+            	if (!setupMutualFundAccount(newAccount, contentHandler, engine,
+                        jGnashAccountEntries, accountIdsToIgnore)) {
+            		return false;
+            	}
+            }
 
             if ("true".equals(SlotEntry.getStringSlotValue(this.slots, "placeholder", null))) {
                 newAccount.setPlaceHolder(true);
@@ -330,14 +342,39 @@ class AccountImportEntry {
     	if (securityNode == null) {
     		CurrencyNode currencyNode = contentHandler.jGnashCurrencies.get(this.commodityRef.id);
     		if (currencyNode == null) {
-	    		contentHandler.recordWarning("StockAccountSecurityNotFound_" + this.commodityRef.id, "Message.Warning.StockAccountSecurityNotFound", this.id.id, this.commodityRef.id);
+	    		contentHandler.recordWarning("StockAccountSecurityNotFound_" + this.commodityRef.id, "Message.Warning.StockAccountSecurityNotFound", 
+	    				this.id.id, this.commodityRef.id);
 	    		return false;
     		}
     	}
     	
     	contentHandler.jGnashSecuritiesByStockAccountId.put(this.id.id, securityNode);
+    	
+    	Account jGnashParentAccount = contentHandler.jGnashAccounts.get(this.parentId.id);
+    	if (jGnashParentAccount != null) {
+    		jGnashParentAccount.addSecurity(securityNode);
+    	}
     			
         return true;
+    }
+    
+    
+    boolean setupMutualFundAccount(Account account, GnuCashToJGnashContentHandler contentHandler, Engine engine,
+                               Map<String, Account> jGnashAccountEntries, Set<String> accountIdsToIgnore) {
+    	// We need to be able to refer to the stock account's security node from transactions.
+    	SecurityNode securityNode = contentHandler.jGnashSecurities.get(this.commodityRef.id);
+    	if (securityNode == null) {
+    		CurrencyNode currencyNode = contentHandler.jGnashCurrencies.get(this.commodityRef.id);
+    		if (currencyNode == null) {
+	    		contentHandler.recordWarning("MutualFundAccountSecurityNotFound_" + this.commodityRef.id, "Message.Warning.MutualFundAccountSecurityNotFound", 
+	    				this.id.id, this.commodityRef.id);
+	    		return false;
+    		}
+    	}
+    	
+    	contentHandler.jGnashSecuritiesByStockAccountId.put(this.id.id, securityNode);
+    	account.addSecurity(securityNode);
+    	return true;
     }
     
     
@@ -349,6 +386,15 @@ class AccountImportEntry {
     		}
     	}
     	return accountType;
+    }
+    
+    
+    boolean isTreatMutualFundAsStock(GnuCashToJGnashContentHandler contentHandler) {
+    	Account jGnashParentAccount = contentHandler.jGnashAccounts.get(this.parentId.id);
+    	if ((jGnashParentAccount != null) && (jGnashParentAccount.getAccountType() == AccountType.INVEST)) {
+    		return true;
+    	}
+    	return false;
     }
     
 

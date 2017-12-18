@@ -18,10 +18,12 @@ package gnucashjgnash.imports;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 
 public class NumericEntry {
     BigInteger numerator = null;
     BigInteger denominator = null;
+    int scale;
 
     public static class NumericStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
         final NumericEntry numericEntry;
@@ -50,6 +52,7 @@ public class NumericEntry {
             try {
                 this.numericEntry.numerator = new BigInteger(numeratorText);
                 this.numericEntry.denominator = new BigInteger(denominatorText);
+                this.numericEntry.scale = (int)Math.round(Math.log10(this.numericEntry.denominator.intValue()));
             }
             catch (NumberFormatException e) {
                 recordWarning("NumericValueInvalid_" + this.elementName, "Message.Parse.XMLNumericValueInvalid", this.elementName);
@@ -64,5 +67,12 @@ public class NumericEntry {
 
     public BigDecimal toBigDecimal() {
         return new BigDecimal(this.numerator).divide(new BigDecimal(this.denominator));
+    }
+    
+    public BigDecimal divide(NumericEntry divisor) {
+    	int scale = Math.max(this.scale, divisor.scale);
+    	BigDecimal bdNumerator = new BigDecimal(this.numerator).multiply(new BigDecimal(divisor.denominator)).setScale(scale);
+    	BigDecimal bdDenominator = new BigDecimal(this.denominator).multiply(new BigDecimal(divisor.numerator)).setScale(scale);
+    	return bdNumerator.divide(bdDenominator, RoundingMode.HALF_EVEN);
     }
 }

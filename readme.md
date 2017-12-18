@@ -1,5 +1,6 @@
 # The plugin is NOT ready for use!
-As of this commit the plugin will import the basic accounts, stocks, and the stock historical prices. No transactions are imported.
+As of this commit the plugin will import the basic accounts, stocks, and the stock historical prices. Transactions are a work in progress,
+particularly investment transactions.
 
 This is a jGnash plugin for a fairly simple Gnucash database into an equivalent jGnash database.
 This has only been tested on GnuCash V 2.6.17/2.6.18
@@ -43,9 +44,17 @@ https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc
     - The source (price:source) is ignored.
 
 - Transactions:
-	- Lots are not yet supported.
+	- Transaction lots are not yet supported.
 	- The post date is used, not the entered date.
 	- If both the credit and debit sides of a transaction entry pair have a memo, the memo for the credit side is the one used.
+	
+- Investment transactions:
+	- Reinvested dividends:
+	   Reinvested dividends in investments are detected by a transaction where one account is an investment or mutual fund account and
+	   the other account is an income account. The transaction is entered as two transactions:
+	       - A dividend transaction recording the income in the income account and the cash addition to the investment account.
+	       - A buy transaction recording the purchase of the shares from the investment account.
+	
 
 # Project Development Notes:
 Here are my notes on creating a new plugin for jGnash that can be developed and debugged from Eclipse.
