@@ -53,7 +53,7 @@ public class TransactionImportEntry {
     String description;
     Map<String, SlotEntry> slots = new HashMap<>();
     Map<String, SplitEntry> splits = new HashMap<>();
-    List<SplitEntry> splitsList = new ArrayList<>();
+    List<SplitEntry> originalSplitsList = new ArrayList<>();
     
     
     public static class TransactionStateHandler extends AbstractVersionStateHandler {
@@ -119,7 +119,7 @@ public class TransactionImportEntry {
                 return new SlotEntry.SlotsStateHandler(this.transactionEntry.slots, this.contentHandler, this, qName);
                 
             case "trn:splits":
-                return new SplitEntry.SplitsStateHandler(this.transactionEntry.splits, this.transactionEntry.splitsList, "trn:split", this.contentHandler, this, qName);
+                return new SplitEntry.SplitsStateHandler(this.transactionEntry.splits, this.transactionEntry.originalSplitsList, "trn:split", this.contentHandler, this, qName);
             }
             return super.getStateHandlerForElement(qName);
         }
@@ -145,21 +145,8 @@ public class TransactionImportEntry {
             if (!entry.dateEntered.validateParse(this, "trn:date-entered")) {
                 return;
             }
-            if (entry.splits.size() < 2) {
-            	if (entry.splits.size() == 1) {
-	            	SplitEntry splitEntry = entry.splitsList.get(0);
-	            	AccountImportEntry accountImportEntry = this.contentHandler.accountImportEntries.get(splitEntry.account.id);
-	            	String accountName = (accountImportEntry != null) ? accountImportEntry.name : null;
-	                recordWarning("TooFewSplits", "Message.Parse.XMLTooFewTransactionSplits", entry.id, entry.datePosted.toDateString(), accountName,
-	                		splitEntry.value.toBigDecimal(), splitEntry.quantity.toBigDecimal());
-            	}
-                return;
-            }
             
-            if (this.contentHandler.transactionEntries.containsKey(entry.id.id)) {
-                recordWarning("DuplicateTransaction", "Message.Parse.XMLDuplicateTransaction", entry.id, entry.datePosted.toDateString());
-            }
-            this.contentHandler.transactionEntries.put(entry.id.id, entry);
+            this.contentHandler.addTransactionEntry(entry);
         }
         
     }
@@ -183,37 +170,68 @@ public class TransactionImportEntry {
      * @return
      */
     public boolean generateJGnashTransaction(GnuCashToJGnashContentHandler contentHandler, Engine engine) {
-        for (SplitEntry splitEntry : this.splitsList) {
+        for (SplitEntry splitEntry : this.originalSplitsList) {
             if (!splitEntry.validateForJGnash(contentHandler)) {
                 return true;
             }
         }
         
+        boolean isTestDate = (this.datePosted.localDate.getYear() == 1997)
+        		&& (this.datePosted.localDate.getMonthValue() == 12)
+        		&& (this.datePosted.localDate.getDayOfMonth() == 15);
+        
+        ArrayList<SplitEntry> splitsList = new ArrayList<>();
+        String memo = this.description;
+        
+        // Handle special splits...
+        for (SplitEntry splitEntry : this.originalSplitsList) {
+        	if ("Split".equals(splitEntry.action)) {
+        		if (!handleSecuritySplitSplit(splitEntry, contentHandler, engine)) {
+        			return false;
+        		}
+        		memo = null;
+        	}
+        	else {
+        		splitsList.add(splitEntry);
+        	}
+        }
+        
+        if (splitsList.isEmpty()) {
+        	return true;
+        }
+        
         // Is this an investment transaction?
         ArrayList<SplitEntry> investmentSplitEntries = new ArrayList<>();
-        for (SplitEntry splitEntry : this.splitsList) {
+        for (SplitEntry splitEntry : splitsList) {
             if (splitEntry.jGnashSecurity != null) {
                 investmentSplitEntries.add(splitEntry);
             }
         }
         
         if (!investmentSplitEntries.isEmpty()) {
-        	return handleJGnashInvestmentTransaction(investmentSplitEntries, contentHandler, engine);
+        	return handleJGnashInvestmentTransaction(splitsList, investmentSplitEntries, contentHandler, engine);
         }
+        else if (splitsList.size() == 1) {
+        	SplitEntry splitEntry = splitsList.get(0);
+        	Transaction transaction = TransactionFactory.generateSingleEntryTransaction(splitEntry.jGnashAccount,
+        			splitEntry.value.toBigDecimal(), this.datePosted.localDate, null, this.description, this.num);
+        	engine.addTransaction(transaction);
+        	return true;
+        }
+        
         
         final Transaction transaction = new Transaction();
         
-        if (this.description != null) {
-            transaction.setMemo(this.description);
+        if (memo != null) {
+            transaction.setMemo(memo);
         }
         if (this.num != null) {
             transaction.setNumber(this.num);
         }
         
-        // TODO There is a  slot with key date-posted and value type gdate, do we want to use that?
         transaction.setDate(this.datePosted.localDate);
 
-        if (!generateJGnashSplitTransactionEntries(contentHandler, transaction)) {
+        if (!generateJGnashSplitTransactionEntries(splitsList, contentHandler, transaction)) {
             return false;
         }
         
@@ -221,10 +239,48 @@ public class TransactionImportEntry {
         return true;
     }
     
-    protected boolean handleJGnashInvestmentTransaction(List<SplitEntry> investmentSplitEntries, GnuCashToJGnashContentHandler contentHandler, Engine engine) {
+
+    protected boolean handleSecuritySplitSplit(SplitEntry splitEntry, GnuCashToJGnashContentHandler contentHandler, Engine engine) {
+		SecurityNode securityNode = splitEntry.jGnashSecurity;
+		Account account = splitEntry.jGnashAccount;
+
+		InvestmentTransaction transaction = TransactionFactory.generateSplitXTransaction(account, securityNode,
+				splitEntry.value.toBigDecimal(), splitEntry.quantity.toBigDecimal(), this.datePosted.localDate, this.description);
+		engine.addTransaction(transaction);
+    	return true;
+    }
+    
+    
+    protected boolean handleJGnashInvestmentTransaction(List<SplitEntry> splitsList, List<SplitEntry> investmentSplitEntries, 
+    		GnuCashToJGnashContentHandler contentHandler, Engine engine) {
     	InvestmentTransaction transaction = null;
     	
-    	if (investmentSplitEntries.size() == 1) {
+    	// Handle some special cases
+    	
+    	if (splitsList.size() == 1) {
+    		SplitEntry splitEntry = splitsList.get(0);
+    		SecurityNode securityNode = splitEntry.jGnashSecurity;
+    		Account account = splitEntry.jGnashAccount;
+    		if ("Split".equals(splitEntry.action)) {
+				transaction = TransactionFactory.generateSplitXTransaction(account, securityNode,
+						splitEntry.value.toBigDecimal(), splitEntry.quantity.toBigDecimal(), this.datePosted.localDate, this.description);
+    		}
+    		else if ("Merge".equals(splitEntry.action)) {
+    			// TODO: Handle Merge transaction.
+	            System.out.print("Merge Transaction:\t" + this.datePosted.localDate + "\t" + this.description);
+    			System.out.print("\t[" + securityNode.getSymbol() + "]");
+    			System.out.print("\t" + splitEntry.value.toBigDecimal() + "\t" + splitEntry.quantity.toBigDecimal());
+    			System.out.println();
+    		}
+    		else {
+    			// TODO Record warning
+    			System.out.print("Unhandled Single Split Entry Transaction:\t" + this.datePosted.localDate + "\t" + this.description);
+    			System.out.print("\t[" + securityNode.getSymbol() + "]");
+    			System.out.print("\t" + splitEntry.value.toBigDecimal() + "\t" + splitEntry.quantity.toBigDecimal());
+    			System.out.println();
+    		}
+    	}
+    	else if (investmentSplitEntries.size() == 1) {
     		// Buy or sell?
     		SplitEntry securitySplitEntry = investmentSplitEntries.get(0);
     		SecurityNode securityNode = securitySplitEntry.jGnashSecurity;
@@ -243,8 +299,8 @@ public class TransactionImportEntry {
     		Account account = null;
 			List<SplitEntry> feeSplitEntries = new ArrayList<>();
 			
-    		if (this.splitsList.size() == 2) {
-    			accountSplitEntry = (this.splitsList.get(0) == securitySplitEntry) ? this.splitsList.get(1) : this.splitsList.get(0);
+    		if (splitsList.size() == 2) {
+    			accountSplitEntry = (splitsList.get(0) == securitySplitEntry) ? splitsList.get(1) : splitsList.get(0);
     			account = contentHandler.jGnashAccounts.get(accountSplitEntry.account.id);
     			if (account == null) {
 					// TODO Record Warning 
@@ -252,7 +308,8 @@ public class TransactionImportEntry {
     			}
     		}
     		else {
-	    		for (SplitEntry splitEntry : this.splitsList) {
+    			Account jGnashIncomeAccount = null;
+	    		for (SplitEntry splitEntry : splitsList) {
 	    			if (splitEntry == securitySplitEntry) {
 	    				continue;
 	    			}
@@ -266,11 +323,12 @@ public class TransactionImportEntry {
 	    				case CHECKING:
 						case INVEST:
 						case MUTUAL :
+						case INCOME :
 							if (account != null) {
 								// TODO Record Warning
 					            System.out.print("Multiple Investment Transaction Accounts: _Investment Split Entries:");
 					            System.out.print("\t" + this.datePosted.localDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
-					            for (SplitEntry entry : this.splitsList) {
+					            for (SplitEntry entry : splitsList) {
 					                if (splitEntry.jGnashSecurity != null) {
 					                    System.out.print("\t" + entry.jGnashSecurity.getSymbol());
 					                }
@@ -300,6 +358,19 @@ public class TransactionImportEntry {
 	    			
 	    			// TODO: Record this warning...
 	    			if (jGnashAccount == null) {
+			            System.out.print("Split Entry Missing jGnash Account: _Investment Split Entries:");
+			            System.out.print("\t" + this.datePosted.localDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
+			            for (SplitEntry entry : splitsList) {
+			                if (splitEntry.jGnashSecurity != null) {
+			                    System.out.print("\t" + entry.jGnashSecurity.getSymbol());
+			                }
+			                else {
+			                    System.out.print("\t" + entry.jGnashAccount.getName());
+			                }
+			                System.out.print("\t" + entry.value.toBigDecimal() + "\t");
+			            }
+			            System.out.println();
+						
 	    				break;
 	    			}
 	    		}
@@ -333,7 +404,7 @@ public class TransactionImportEntry {
     				if (account.getAccountType() == AccountType.INCOME) {
     		            BigDecimal amount = securitySplitEntry.value.toBigDecimal();
     		            transaction = TransactionFactory.generateDividendXTransaction(account, investmentAccount, investmentAccount, 
-    		            		securityNode, amount, amount, amount, this.datePosted.localDate, this.description);
+    		            		securityNode, amount, amount.negate(), BigDecimal.ZERO, this.datePosted.localDate, this.description);
     		            engine.addTransaction(transaction);
     		            
     		            // The dividend is now in the investment account, we're buying from there...
@@ -345,11 +416,32 @@ public class TransactionImportEntry {
     			}
     		}
     	}
+    	else if (investmentSplitEntries.size() == 2) {
+    		// Some special case transactions I had, probably hacks, or results of importing Quicken into GnuCash.
+    		SplitEntry splitEntryA = investmentSplitEntries.get(0);
+    		SplitEntry splitEntryB = investmentSplitEntries.get(1);
+    		if (splitEntryA.account.id.equals(splitEntryB.account.id)) {
+    			BigDecimal valueA = splitEntryA.value.toBigDecimal();
+    			BigDecimal quantityA = splitEntryA.quantity.toBigDecimal();
+    			BigDecimal valueB = splitEntryB.value.toBigDecimal();
+    			BigDecimal quantityB = splitEntryB.quantity.toBigDecimal();
+    			if (valueA.equals(BigDecimal.ZERO) && valueB.equals(BigDecimal.ZERO)
+    			 && !quantityA.equals(BigDecimal.ZERO) && !quantityB.equals(BigDecimal.ZERO)) {
+    				if (!quantityA.equals(quantityB)) {
+    					// Most likely a stock split. Since we don't have a value, we'll just use one.
+    	    			Account account = contentHandler.jGnashAccounts.get(splitEntryA.account.id);
+    					BigDecimal quantity = quantityA.add(quantityB);
+    					transaction = TransactionFactory.generateSplitXTransaction(account, splitEntryA.jGnashSecurity,
+    							BigDecimal.ONE, quantity, this.datePosted.localDate, this.description);
+    				}
+    			}
+    		}
+    	}
         
     	if (transaction == null) {
             System.out.print("Skipping: _Investment Split Entries:");
             System.out.print("\t" + this.datePosted.localDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
-            for (SplitEntry splitEntry : this.splitsList) {
+            for (SplitEntry splitEntry : splitsList) {
                 if (splitEntry.jGnashSecurity != null) {
                     System.out.print("\t[" + splitEntry.jGnashSecurity.getSymbol() + "]");
                 }
@@ -366,19 +458,14 @@ public class TransactionImportEntry {
     	return true;
     }
 
-    /*
-    public static InvestmentTransaction generateBuyXTransaction(final Account account, final Account investmentAccount,
-            final SecurityNode node, final BigDecimal price,
-            final BigDecimal quantity, final BigDecimal exchangeRate,
-            final LocalDate date, final String memo,
-            final Collection<TransactionEntry> fees) {
-    */
     
     final static SplitEntry assignEntryIfNull(SplitEntry refEntry, SplitEntry newEntry) {
     	return (refEntry == null) ? newEntry : refEntry;
     }
     
-    protected boolean generateJGnashSplitTransactionEntries(GnuCashToJGnashContentHandler contentHandler, Transaction transaction) {
+    protected boolean generateJGnashSplitTransactionEntries(List<SplitEntry> splitsList, 
+    		GnuCashToJGnashContentHandler contentHandler, Transaction transaction) {
+    	
         // Look for an account to serve as the main account. This will receive all the credits, and disburse all the debits.
         SplitEntry masterSplitEntry = null;
         
@@ -390,7 +477,7 @@ public class TransactionImportEntry {
         SplitEntry incomeSplitEntry = null;
         SplitEntry expenseSplitEntry = null;
         
-        for (SplitEntry splitEntry : this.splitsList) {
+        for (SplitEntry splitEntry : splitsList) {
             Account jGnashAccount = splitEntry.jGnashAccount;
             switch (jGnashAccount.getAccountType()) {
             case BANK :
@@ -448,7 +535,7 @@ public class TransactionImportEntry {
         
         // We have our master account.
         // Add all the credits to it and remove all the debits...
-        for (SplitEntry splitEntry : this.splitsList) {
+        for (SplitEntry splitEntry : splitsList) {
             if (splitEntry == masterSplitEntry) {
                 continue;
             }
@@ -486,19 +573,7 @@ public class TransactionImportEntry {
         }
         
         // Special security transactions...
-        TransactionEntry transactionEntry = null;
-        if (creditSplitEntry.jGnashSecurity != null) {
-            // Buy
-        }
-        else if (debitSplitEntry.jGnashSecurity != null) {
-            // Sell
-        }
-        else {
-            transactionEntry = new TransactionEntry();
-        }
-        if (transactionEntry == null) {
-            return null;
-        }
+        TransactionEntry transactionEntry = new TransactionEntry();
         
         transactionEntry.setCreditAccount(creditSplitEntry.jGnashAccount);
         transactionEntry.setDebitAccount(debitSplitEntry.jGnashAccount);

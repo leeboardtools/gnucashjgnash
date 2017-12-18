@@ -60,8 +60,9 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     
     final Map<String, Account> jGnashAccounts = new HashMap<>();
 
-    final Map<String, TransactionImportEntry> transactionEntries = new HashMap<>();
-    
+    //final Map<String, TransactionImportEntry> transactionEntries = new HashMap<>();
+    final SortedMap<LocalDate, Map<String, TransactionImportEntry>> transactionEntriesByDate = new TreeMap<>();
+    int totalTransactionEntryCount;
 
     final Set<String> recordedWarningMsgIds = new HashSet<>();
     final List<String> recordedWarnings = new ArrayList<>();
@@ -517,6 +518,28 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         
         return true;
     }
+    
+    boolean addTransactionEntry(TransactionImportEntry entry) {
+        /*if (this.transactionEntries.containsKey(entry.id.id)) {
+            recordWarning("DuplicateTransaction", "Message.Parse.XMLDuplicateTransaction", entry.id, entry.datePosted.toDateString());
+        }
+        this.transactionEntries.put(entry.id.id, entry);
+        */
+        
+        Map<String, TransactionImportEntry> dateEntries = this.transactionEntriesByDate.get(entry.datePosted.localDate);
+        if (dateEntries == null) {
+        	dateEntries = new HashMap<>();
+        	this.transactionEntriesByDate.put(entry.datePosted.localDate, dateEntries);
+        }
+        if (dateEntries.put(entry.id.id, entry) != null) {
+            recordWarning("DuplicateTransaction", "Message.Parse.XMLDuplicateTransaction", entry.id, entry.datePosted.toDateString());
+        }
+        else {
+        	++this.totalTransactionEntryCount;
+        }
+        
+    	return true;
+    }
 
 
     public boolean generateJGnashDatabase() {
@@ -656,19 +679,22 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     protected boolean processTransactions() {
         Integer expectedCount = this.countData.get("transaction");
         if (expectedCount != null) {
-            if (expectedCount != this.transactionEntries.size()) {
-                recordWarning(null, "Message.Warning.TransactionCountMismatch", expectedCount, this.transactionEntries.size());
+            if (expectedCount != this.totalTransactionEntryCount) {
+                recordWarning(null, "Message.Warning.TransactionCountMismatch", expectedCount, this.totalTransactionEntryCount);
             }
         }
         
         int count = 0;
-        for (Map.Entry<String, TransactionImportEntry> entry : this.transactionEntries.entrySet()) {
-            TransactionImportEntry transactionEntry = entry.getValue();
-            if (!transactionEntry.generateJGnashTransaction(this, this.engine)) {
-                //return false;
-            		continue;
-            }
-            ++count;
+        for (Map.Entry<LocalDate, Map<String, TransactionImportEntry>> dateEntry : this.transactionEntriesByDate.entrySet()) {
+        	Map<String, TransactionImportEntry> entriesForDate = dateEntry.getValue();
+        	for (Map.Entry<String, TransactionImportEntry> entry : entriesForDate.entrySet()) {
+	            TransactionImportEntry transactionEntry = entry.getValue();
+	            if (!transactionEntry.generateJGnashTransaction(this, this.engine)) {
+	                //return false;
+	            	continue;
+	            }
+	            ++count;
+        	}
         }
         
         LOG.info("Processed " + count + " transactions.");

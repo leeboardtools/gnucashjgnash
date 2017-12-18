@@ -54,7 +54,7 @@ https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc
 	   the other account is an income account. The transaction is entered as two transactions:
         - A dividend transaction recording the income in the income account and the cash addition to the investment account.
         - A buy transaction recording the purchase of the shares from the investment account.
-	
+	- Stock merges are not specifically handled as
 
 # Project Development Notes:
 Here are my notes on creating a new plugin for jGnash that can be developed and debugged from Eclipse.
