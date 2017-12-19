@@ -14,7 +14,6 @@
 
 
 # Next Up
-- Fix TODO warnings in TransactionImportEntry.
 - Decimate the historical quotes over 1 year old to oldest value each month.
 - Scheduled transactions
 - Add progress window.
