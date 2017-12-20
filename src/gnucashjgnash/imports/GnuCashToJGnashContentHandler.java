@@ -36,6 +36,9 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
     final Engine engine;
     final GnuCashImport.StatusCallback statusCallback;
+    int statusProgressCount;
+    int statusProgressTotalCount;
+    
     final List<StateHandler> stateHandlers = new ArrayList<>();
     StateHandler activeStateHandler;
 
@@ -49,7 +52,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     final Map<String, CurrencyNode> jGnashCurrencies = new HashMap<>();
 
     final Map<String, PriceEntry> priceEntries = new HashMap<>();
-    final Map<String, Map<LocalDate, PriceEntry>> sortedPriceEntries = new HashMap<>();
+    final Map<String, SortedMap<LocalDate, PriceEntry>> sortedPriceEntries = new HashMap<>();
 
     final Map<String, AccountImportEntry> accountImportEntries = new HashMap<>();
     final Set<String> accountIdsInUse = new HashSet<>();
@@ -506,7 +509,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     
     boolean addPriceEntry(PriceEntry priceEntry) {
         String securityId = priceEntry.commodityRef.id;
-        Map<LocalDate, PriceEntry> priceEntriesForSecurity = this.sortedPriceEntries.get(securityId);
+        SortedMap<LocalDate, PriceEntry> priceEntriesForSecurity = this.sortedPriceEntries.get(securityId);
         if (priceEntriesForSecurity == null) {
             priceEntriesForSecurity = new TreeMap<LocalDate, PriceEntry>();
             this.sortedPriceEntries.put(securityId, priceEntriesForSecurity);
@@ -520,12 +523,6 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     }
     
     boolean addTransactionEntry(TransactionImportEntry entry) {
-        /*if (this.transactionEntries.containsKey(entry.id.id)) {
-            recordWarning("DuplicateTransaction", "Message.Parse.XMLDuplicateTransaction", entry.id, entry.datePosted.toDateString());
-        }
-        this.transactionEntries.put(entry.id.id, entry);
-        */
-        
         Map<String, TransactionImportEntry> dateEntries = this.transactionEntriesByDate.get(entry.datePosted.localDate);
         if (dateEntries == null) {
         	dateEntries = new HashMap<>();
@@ -540,10 +537,24 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         
     	return true;
     }
+    
+    void updateStatusCallback(long toAdd, String statusMsg) {
+    	if (this.statusCallback != null) {
+    		this.statusProgressCount += toAdd;
+    		this.statusCallback.updateStatus(this.statusProgressCount,  this.statusProgressTotalCount, statusMsg);
+    	}
+    }
 
 
     public boolean generateJGnashDatabase() {
         this.errorMsg = null;
+        
+        this.statusProgressCount = 0;
+        this.statusProgressTotalCount = 0;
+        this.statusProgressTotalCount += this.commodityEntries.size();
+        this.statusProgressTotalCount += this.sortedPriceEntries.size();
+        this.statusProgressTotalCount += this.accountImportEntries.size();
+        this.statusProgressTotalCount += this.totalTransactionEntryCount;
 
         if (!setupCommodities()) {
             return false;
@@ -567,6 +578,8 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
 
     protected boolean setupCommodities() {
+    	updateStatusCallback(0, GnuCashConvertUtil.getString("Message.Status.ImportingCommodities"));
+    	
         Integer expectedCount = this.countData.get("commodity");
         if (expectedCount != null) {
             if (expectedCount != this.commodityEntries.size()) {
@@ -579,36 +592,67 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
             if (!commodityEntry.createJGnashCommodity(this, this.engine)) {
                 return false;
             }
+            updateStatusCallback(1, null);
         }
         return true;
     }
 
 
     protected boolean setupPrices() {
-        for (Map.Entry<String, Map<LocalDate, PriceEntry>> entry : this.sortedPriceEntries.entrySet()) {
+    	updateStatusCallback(0, GnuCashConvertUtil.getString("Message.Status.ImportingCommodityPrices"));
+    	
+        for (Map.Entry<String, SortedMap<LocalDate, PriceEntry>> entry : this.sortedPriceEntries.entrySet()) {
             SecurityNode securityNode = this.jGnashSecurities.get(entry.getKey());
-            if (securityNode == null) {
-                continue;
+            if (securityNode != null) {
+	            if (!setupPricesForAccount(securityNode, entry.getValue())) {
+	                return false;
+	            }
             }
             
-            if (!setupPricesForAccount(securityNode, entry.getValue())) {
-                return false;
-            }
+            updateStatusCallback(1, null);
         }
 
         return true;
     }
     
-    protected boolean setupPricesForAccount(SecurityNode securityNode, Map<LocalDate, PriceEntry> priceEntriesByDate) {
-    		int count = 0;
-        for (Map.Entry<LocalDate, PriceEntry> entry : priceEntriesByDate.entrySet()) {
-            LocalDate localDate = entry.getKey();
-            // TEST!!!
-            if (localDate.getYear() < 2017) {
-                continue;
-            }
-            
-	        PriceEntry priceEntry = entry.getValue();
+    protected boolean setupPricesForAccount(SecurityNode securityNode, SortedMap<LocalDate, PriceEntry> priceEntriesByDate) {
+    	if (priceEntriesByDate.isEmpty()) {
+    		return true;
+    	}
+    	
+        int count = 0;
+        
+        LocalDate keys [] = priceEntriesByDate.keySet().toArray(new LocalDate [priceEntriesByDate.size()]);
+        
+        // Keep everything newer than 30 days.
+        // After that, keep the oldest in each month.
+        LocalDate monthAgo = LocalDate.now().minusMonths(1);
+        int index = keys.length - 1;
+        for (; index >= 0; --index) {
+        	LocalDate date = keys[index];
+        	if (date.isBefore(monthAgo)) {
+        		break;
+        	}
+
+	        PriceEntry priceEntry = priceEntriesByDate.get(date);
+	        if (!priceEntry.generateJGnashSecurityHistoryNode(this, this.engine, securityNode)) {
+	            return false;
+	        }
+	        
+	        ++count;
+        }
+        
+        // Get the last day of the previous month...
+        monthAgo = LocalDate.of(monthAgo.getYear(), monthAgo.getMonth(), 1).minusDays(1);
+        
+        for (; index >= 0; --index) {
+        	LocalDate date = keys[index];
+        	if (date.isAfter(monthAgo)) {
+        		continue;
+        	}
+            monthAgo = LocalDate.of(monthAgo.getYear(), monthAgo.getMonth(), 1).minusDays(1);
+
+	        PriceEntry priceEntry = priceEntriesByDate.get(date);
 	        if (!priceEntry.generateJGnashSecurityHistoryNode(this, this.engine, securityNode)) {
 	            return false;
 	        }
@@ -622,6 +666,8 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
 
     protected boolean setupAccounts() {
+    	updateStatusCallback(0, GnuCashConvertUtil.getString("Message.Status.SettingUpAccounts"));
+    	
         Integer expectedCount = this.countData.get("account");
         if (expectedCount != null) {
             if (expectedCount != this.accountImportEntries.size()) {
@@ -677,6 +723,8 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     
     
     protected boolean processTransactions() {
+    	updateStatusCallback(0, GnuCashConvertUtil.getString("Message.Status.ProcessingTransactions"));
+    	
         Integer expectedCount = this.countData.get("transaction");
         if (expectedCount != null) {
             if (expectedCount != this.totalTransactionEntryCount) {
@@ -689,7 +737,9 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         	Map<String, TransactionImportEntry> entriesForDate = dateEntry.getValue();
         	for (Map.Entry<String, TransactionImportEntry> entry : entriesForDate.entrySet()) {
 	            TransactionImportEntry transactionEntry = entry.getValue();
-	            if (!transactionEntry.generateJGnashTransaction(this, this.engine)) {
+	            boolean result = transactionEntry.generateJGnashTransaction(this, this.engine);
+	            updateStatusCallback(1, null);
+	            if (!result) {
 	                //return false;
 	            	continue;
 	            }

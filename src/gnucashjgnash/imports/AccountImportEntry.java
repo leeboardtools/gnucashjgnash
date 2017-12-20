@@ -329,6 +329,8 @@ class AccountImportEntry {
                 return false;
             }
         }
+        
+        contentHandler.updateStatusCallback(1, null);
 
         return true;
     }
