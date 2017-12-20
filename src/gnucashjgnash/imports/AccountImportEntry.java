@@ -34,7 +34,7 @@ class AccountImportEntry {
     String name;
     IdEntry id = new IdEntry();
     String type;
-	CommodityRef commodityRef = new CommodityRef();
+    CommodityRef commodityRef = new CommodityRef();
     String code;
     String description;
     IdEntry parentId = new IdEntry();
@@ -62,60 +62,60 @@ class AccountImportEntry {
             return true;
         }
 
-		/* (non-Javadoc)
-		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
-		 */
-		@Override
-		protected StateHandler getStateHandlerForElement(String qName) {
-			switch (qName) {
-			case "act:name" :
-				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
-		                @Override
-		                protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
-		                    accountEntry.name = value;
-		                }
-		            });
+        /* (non-Javadoc)
+         * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
+         */
+        @Override
+        protected StateHandler getStateHandlerForElement(String qName) {
+            switch (qName) {
+            case "act:name" :
+                return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+                        @Override
+                        protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
+                            accountEntry.name = value;
+                        }
+                    });
 
-			case "act:id" :
-	            return new IdEntry.IdStateHandler(this.accountEntry.id, this.contentHandler, this, qName);
+            case "act:id" :
+                return new IdEntry.IdStateHandler(this.accountEntry.id, this.contentHandler, this, qName);
 
-			case "act:type" :
-				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
-		                @Override
-		                protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
-		                    accountEntry.type = value;
-		                }
-		            });
+            case "act:type" :
+                return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+                        @Override
+                        protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
+                            accountEntry.type = value;
+                        }
+                    });
 
-			case "act:description" :
-				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
-		                @Override
-		                protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
-		                    accountEntry.description = value;
-		                }
-		            });
-				
-			case "act:slots" :
+            case "act:description" :
+                return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+                        @Override
+                        protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
+                            accountEntry.description = value;
+                        }
+                    });
+                
+            case "act:slots" :
                 return new SlotEntry.SlotsStateHandler(this.accountEntry.slots, this.contentHandler, this, qName);
                 
-			case "act:parent" :
-				return new IdEntry.IdStateHandler(this.accountEntry.parentId, this.contentHandler, this, qName);
-				
-			case "act:commodity" :
-				return new CommodityEntry.CommodityRefStateHandler(this.accountEntry.commodityRef, this.contentHandler, this, qName);
-				
-			case "act:commodity-scu" :
-				// Smallest currency unit
-				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
-	                @Override
-	                protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
-	                }
-	            });
+            case "act:parent" :
+                return new IdEntry.IdStateHandler(this.accountEntry.parentId, this.contentHandler, this, qName);
+                
+            case "act:commodity" :
+                return new CommodityEntry.CommodityRefStateHandler(this.accountEntry.commodityRef, this.contentHandler, this, qName);
+                
+            case "act:commodity-scu" :
+                // Smallest currency unit
+                return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+                    @Override
+                    protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
+                    }
+                });
 
-			}
+            }
 
-			return super.getStateHandlerForElement(qName);
-		}
+            return super.getStateHandlerForElement(qName);
+        }
 
         @Override
         protected void endState() {
@@ -216,13 +216,13 @@ class AccountImportEntry {
                 break;
 
             case "STOCK":
-            	accountType = AccountType.INVEST;
-            	hasSecurities = true;
-            	break;
+                accountType = AccountType.INVEST;
+                hasSecurities = true;
+                break;
 
             case "MUTUAL":
                 accountType = AccountType.MUTUAL;
-            	hasSecurities = true;
+                hasSecurities = true;
                 break;
 
             case "CURRENCY":
@@ -265,7 +265,7 @@ class AccountImportEntry {
 
             case "SAVINGS":
                 accountType = AccountType.CHECKING;
-               	contentHandler.recordWarning("SavingsAsChecking", "Message.Info.AccountMapped", this.type, "CHECKING");
+                   contentHandler.recordWarning("SavingsAsChecking", "Message.Info.AccountMapped", this.type, "CHECKING");
                 break;
 
             case "MONEYMRKT":
@@ -314,9 +314,9 @@ class AccountImportEntry {
             }
             
             if (hasSecurities) {
-            	if (!setupAccountSecurities(newAccount, contentHandler)) {
-            		return false;
-            	}
+                if (!setupAccountSecurities(newAccount, contentHandler)) {
+                    return false;
+                }
             }
 
             engine.addAccount(parentAccount, newAccount);
@@ -337,20 +337,20 @@ class AccountImportEntry {
 
     
     boolean setupAccountSecurities(Account account, GnuCashToJGnashContentHandler contentHandler) {
-    	SecurityNode securityNode = contentHandler.jGnashSecurities.get(this.commodityRef.id);
-    	if (securityNode == null) {
-    		CurrencyNode currencyNode = contentHandler.jGnashCurrencies.get(this.commodityRef.id);
-    		if (currencyNode == null) {
-	    		contentHandler.recordWarning("StockAccountSecurityNotFound_" + this.commodityRef.id, "Message.Warning.StockAccountSecurityNotFound", 
-	    				this.id.id, this.commodityRef.id);
-	    		return false;
-    		}
-    	}
-    	
-    	contentHandler.jGnashSecuritiesByStockAccountId.put(this.id.id, securityNode);
-    	
-    	account.addSecurity(securityNode);
-    	return true;
+        SecurityNode securityNode = contentHandler.jGnashSecurities.get(this.commodityRef.id);
+        if (securityNode == null) {
+            CurrencyNode currencyNode = contentHandler.jGnashCurrencies.get(this.commodityRef.id);
+            if (currencyNode == null) {
+                contentHandler.recordWarning("StockAccountSecurityNotFound_" + this.commodityRef.id, "Message.Warning.StockAccountSecurityNotFound", 
+                        this.id.id, this.commodityRef.id);
+                return false;
+            }
+        }
+        
+        contentHandler.jGnashSecuritiesByStockAccountId.put(this.id.id, securityNode);
+        
+        account.addSecurity(securityNode);
+        return true;
     }
 
     

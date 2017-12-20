@@ -27,34 +27,34 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
  *
  */
 public class GDateEntry {
-	LocalDate localDate = LocalDate.now();
-	String parseError;
-	
-	
-	public static class GDateStateHandler extends AbstractStateHandler {
-		final GDateEntry gDateEntry;
-		
-		GDateStateHandler(GDateEntry gDateEntry, GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
-				String elementName) {
-			super(contentHandler, parentStateHandler, elementName);
-			this.gDateEntry = gDateEntry;
-		}
+    LocalDate localDate = LocalDate.now();
+    String parseError;
+    
+    
+    public static class GDateStateHandler extends AbstractStateHandler {
+        final GDateEntry gDateEntry;
+        
+        GDateStateHandler(GDateEntry gDateEntry, GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
+                String elementName) {
+            super(contentHandler, parentStateHandler, elementName);
+            this.gDateEntry = gDateEntry;
+        }
 
-		/* (non-Javadoc)
-		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#endState()
-		 */
-		@Override
-		protected void endState() {
-			super.endState();
-			
-			try {
-				this.gDateEntry.parseError = null;
-				this.gDateEntry.localDate = LocalDate.parse(this.characters);
-			}
-			catch (DateTimeParseException e) {
-				this.gDateEntry.parseError = e.getLocalizedMessage();
-			}
-		}
-		
-	}
+        /* (non-Javadoc)
+         * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#endState()
+         */
+        @Override
+        protected void endState() {
+            super.endState();
+            
+            try {
+                this.gDateEntry.parseError = null;
+                this.gDateEntry.localDate = LocalDate.parse(this.characters);
+            }
+            catch (DateTimeParseException e) {
+                this.gDateEntry.parseError = e.getLocalizedMessage();
+            }
+        }
+        
+    }
 }

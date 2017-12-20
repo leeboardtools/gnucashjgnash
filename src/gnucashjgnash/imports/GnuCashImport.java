@@ -194,7 +194,7 @@ public class GnuCashImport {
                 jGnashEngineLogger.setLevel(Level.WARNING);
             }
             if (jGnashTransactionFactoryLogger != null) {
-            	jGnashTransactionFactoryLogger.setLevel(Level.WARNING);
+                jGnashTransactionFactoryLogger.setLevel(Level.WARNING);
             }
             
             
@@ -244,7 +244,7 @@ public class GnuCashImport {
                 jGnashEngineLogger.setLevel(savedEngineLoggingLevel);
             }
             if (jGnashTransactionFactoryLogger != null) {
-            	jGnashTransactionFactoryLogger.setLevel(savedTransactionFactoryLoggingLevel);
+                jGnashTransactionFactoryLogger.setLevel(savedTransactionFactoryLoggingLevel);
             }
         }
 

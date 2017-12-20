@@ -68,7 +68,7 @@ public class ImportGnuCashAction {
 
         File initialDir = new File(pref.get(LAST_DIR, System.getProperty("user.home")));
         if (initialDir.exists()) {
-        	fileChooser.setInitialDirectory(initialDir);
+            fileChooser.setInitialDirectory(initialDir);
         }
 
         fileChooser.getExtensionFilters().addAll(

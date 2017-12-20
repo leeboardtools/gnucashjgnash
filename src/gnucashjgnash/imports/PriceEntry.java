@@ -146,11 +146,11 @@ public class PriceEntry {
 
     public boolean generateJGnashSecurityHistoryNode(GnuCashToJGnashContentHandler contentHandler, Engine engine, SecurityNode securityNode) {
         if (securityNode == null) {
-	        securityNode = contentHandler.jGnashSecurities.get(this.commodityRef.id);
-	        if (securityNode == null) {
-	            contentHandler.recordWarning("PriceCommodityMissing_" + this.commodityRef.id, "Message.Warning.PriceCommodityMissing", this.commodityRef.id);
-	            return true;
-	        }
+            securityNode = contentHandler.jGnashSecurities.get(this.commodityRef.id);
+            if (securityNode == null) {
+                contentHandler.recordWarning("PriceCommodityMissing_" + this.commodityRef.id, "Message.Warning.PriceCommodityMissing", this.commodityRef.id);
+                return true;
+            }
         }
 
         LocalDate date = this.time.localDate;

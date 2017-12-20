@@ -54,17 +54,17 @@ public class SlotEntry {
             this.slotEntries = slotEntries;
         }
         
-		/* (non-Javadoc)
-		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
-		 */
-		@Override
-		protected StateHandler getStateHandlerForElement(String qName) {
-			switch (qName) {
-			case "slot": 
-				return new SlotStateHandler(this.slotEntries, this.contentHandler, this, qName); 
-			}
-			return super.getStateHandlerForElement(qName);
-		}
+        /* (non-Javadoc)
+         * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
+         */
+        @Override
+        protected StateHandler getStateHandlerForElement(String qName) {
+            switch (qName) {
+            case "slot": 
+                return new SlotStateHandler(this.slotEntries, this.contentHandler, this, qName); 
+            }
+            return super.getStateHandlerForElement(qName);
+        }
         
         
     }
@@ -81,26 +81,26 @@ public class SlotEntry {
         }
 
         /* (non-Javadoc)
-		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
-		 */
-		@Override
-		protected StateHandler getStateHandlerForElement(String qName) {
-			switch (qName) {
-			case "slot:key" : 
-				return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
-		                @Override
-		                protected void setSlotEntryField(SlotEntry slotEntry, String value) {
-		                    slotEntry.key = value;
-		                }
-		            });
-				
-			case "slot:value" : 
-				return new SlotValueStateHandler(this.slotEntry, this.contentHandler, this, qName);
-			}
-			return super.getStateHandlerForElement(qName);
-		}
+         * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
+         */
+        @Override
+        protected StateHandler getStateHandlerForElement(String qName) {
+            switch (qName) {
+            case "slot:key" : 
+                return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+                        @Override
+                        protected void setSlotEntryField(SlotEntry slotEntry, String value) {
+                            slotEntry.key = value;
+                        }
+                    });
+                
+            case "slot:value" : 
+                return new SlotValueStateHandler(this.slotEntry, this.contentHandler, this, qName);
+            }
+            return super.getStateHandlerForElement(qName);
+        }
 
-		@Override
+        @Override
         protected void endState() {
             super.endState();
 
@@ -144,79 +144,79 @@ public class SlotEntry {
     
     
     static class SlotValueStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
-    	final SlotEntry slotEntry;
+        final SlotEntry slotEntry;
 
-		SlotValueStateHandler(SlotEntry slotEntry, GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
-				String elementName) {
-			super(contentHandler, parentStateHandler, elementName);
-			this.slotEntry = slotEntry;
-		}
+        SlotValueStateHandler(SlotEntry slotEntry, GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
+                String elementName) {
+            super(contentHandler, parentStateHandler, elementName);
+            this.slotEntry = slotEntry;
+        }
 
-		/* (non-Javadoc)
-		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#handleStateAttributes(org.xml.sax.Attributes)
-		 */
-		@Override
-		public void handleStateAttributes(Attributes atts) {
-			super.handleStateAttributes(atts);
-			this.slotEntry.valueType = atts.getValue("type");
-		}
+        /* (non-Javadoc)
+         * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#handleStateAttributes(org.xml.sax.Attributes)
+         */
+        @Override
+        public void handleStateAttributes(Attributes atts) {
+            super.handleStateAttributes(atts);
+            this.slotEntry.valueType = atts.getValue("type");
+        }
 
-		/* (non-Javadoc)
-		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
-		 */
-		@Override
-		protected StateHandler getStateHandlerForElement(String qName) {
-			switch (this.slotEntry.valueType) {
-				case "timespec" :
-					this.slotEntry.timeEntryValue = new TimeEntry();
-					return new TimeEntry.TimeStateHandler(this.slotEntry.timeEntryValue, this.contentHandler, this, qName);
-					
-				case "gdate" :
-					this.slotEntry.gDateEntryValue = new GDateEntry();
-					return new GDateEntry.GDateStateHandler(this.slotEntry.gDateEntryValue, this.contentHandler, this, qName);
-					
-				case "numeric":
-					this.slotEntry.numericValue = new NumericEntry();
-					return new NumericEntry.NumericStateHandler(this.slotEntry.numericValue, this.contentHandler, this, qName);
-					
-					//case "list":
-				case "frame":
-					if (this.slotEntry.frameSlotEntries == null) {
-						this.slotEntry.frameSlotEntries = new HashMap<>();
-					}
-					if ("slot".equals(qName)) {
-						return new SlotStateHandler(this.slotEntry.frameSlotEntries, this.contentHandler, this, qName);
-					}
-					break; 
-			}
-			return super.getStateHandlerForElement(qName);
-		}
+        /* (non-Javadoc)
+         * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
+         */
+        @Override
+        protected StateHandler getStateHandlerForElement(String qName) {
+            switch (this.slotEntry.valueType) {
+                case "timespec" :
+                    this.slotEntry.timeEntryValue = new TimeEntry();
+                    return new TimeEntry.TimeStateHandler(this.slotEntry.timeEntryValue, this.contentHandler, this, qName);
+                    
+                case "gdate" :
+                    this.slotEntry.gDateEntryValue = new GDateEntry();
+                    return new GDateEntry.GDateStateHandler(this.slotEntry.gDateEntryValue, this.contentHandler, this, qName);
+                    
+                case "numeric":
+                    this.slotEntry.numericValue = new NumericEntry();
+                    return new NumericEntry.NumericStateHandler(this.slotEntry.numericValue, this.contentHandler, this, qName);
+                    
+                    //case "list":
+                case "frame":
+                    if (this.slotEntry.frameSlotEntries == null) {
+                        this.slotEntry.frameSlotEntries = new HashMap<>();
+                    }
+                    if ("slot".equals(qName)) {
+                        return new SlotStateHandler(this.slotEntry.frameSlotEntries, this.contentHandler, this, qName);
+                    }
+                    break; 
+            }
+            return super.getStateHandlerForElement(qName);
+        }
 
-		/* (non-Javadoc)
-		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#endState()
-		 */
-		@Override
-		protected void endState() {
-			super.endState();
-			switch (this.slotEntry.valueType) {
-				case "integer" :
-					this.slotEntry.value = this.characters;
-					break;
-				case "double" :
-					this.slotEntry.value = this.characters;
-					break;
-				case "string" :
-					this.slotEntry.value = this.characters;
-					break;
-				case "guid":
-					this.slotEntry.value = this.characters;
-					break;
-				case "binary":
-					this.slotEntry.value = this.characters;
-					break;
-			}
-		}
-    	
-    	
+        /* (non-Javadoc)
+         * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#endState()
+         */
+        @Override
+        protected void endState() {
+            super.endState();
+            switch (this.slotEntry.valueType) {
+                case "integer" :
+                    this.slotEntry.value = this.characters;
+                    break;
+                case "double" :
+                    this.slotEntry.value = this.characters;
+                    break;
+                case "string" :
+                    this.slotEntry.value = this.characters;
+                    break;
+                case "guid":
+                    this.slotEntry.value = this.characters;
+                    break;
+                case "binary":
+                    this.slotEntry.value = this.characters;
+                    break;
+            }
+        }
+        
+        
     }
 }
