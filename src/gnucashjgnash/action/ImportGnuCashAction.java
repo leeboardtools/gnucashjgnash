@@ -17,7 +17,13 @@
 package gnucashjgnash.action;
 
 import javafx.concurrent.Task;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.layout.GridPane;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import jgnash.engine.DataStoreType;
@@ -34,12 +40,20 @@ import gnucashjgnash.imports.GnuCashImport;
 public class ImportGnuCashAction {
 
     private static final String LAST_DIR = "importDir";
+    private String gnuCashFileName;
+    private String jGnashFileName;
+    private Stage progressStage;
 
     private ImportGnuCashAction() {
         // Utility class
     }
 
     public static void showAndWait(Stage stage) {
+    		ImportGnuCashAction action = new ImportGnuCashAction();
+    		action.showAndWaitImpl(stage);
+    }
+    
+    private void showAndWaitImpl(Stage stage) {
         final ResourceBundle resources = ResourceUtils.getBundle();
 
         final FileChooser fileChooser = configureFileChooser();
@@ -48,18 +62,47 @@ public class ImportGnuCashAction {
         DataStoreType dataStoreType = DataStoreType.H2MV_DATABASE;
 
         final File file = fileChooser.showOpenDialog(stage);
-
-        if (file != null) {
-            Preferences pref = Preferences.userNodeForPackage(ImportGnuCashAction.class);
-            pref.put(LAST_DIR, file.getParentFile().getAbsolutePath());
-
-            String gnuCashFileName = file.toString();
-            String jGnashFileName = null;
-            if (jGnashFileName == null) {
-                jGnashFileName = FileUtils.stripFileExtension(gnuCashFileName) + dataStoreType.getDataStore().getFileExt();
-            }
-            new Thread(new ImportTask(gnuCashFileName, jGnashFileName, dataStoreType, stage)).start();
+        if (file == null) {
+        		return;
         }
+        
+        Preferences pref = Preferences.userNodeForPackage(ImportGnuCashAction.class);
+        pref.put(LAST_DIR, file.getParentFile().getAbsolutePath());
+
+        gnuCashFileName = file.toString();
+        jGnashFileName = null;
+        if (jGnashFileName == null) {
+            jGnashFileName = FileUtils.stripFileExtension(gnuCashFileName) + dataStoreType.getDataStore().getFileExt();
+        }
+        
+        ImportTask task = new ImportTask(gnuCashFileName, jGnashFileName, dataStoreType, stage);
+        
+        String plainGnuCashFileName = file.getName();
+        
+        progressStage = new Stage();
+        progressStage.setTitle(GnuCashConvertUtil.getString("Title.Progress", plainGnuCashFileName));
+        
+        GridPane grid = new GridPane();
+        grid.setAlignment(Pos.CENTER);
+        grid.setHgap(10);
+        grid.setVgap(10);
+        //grid.setPadding(new Insets(25, 25, 25, 25));
+        
+        Scene scene = new Scene(grid, 500, 175);
+        progressStage.setScene(scene);
+        
+        Text progressMessage = new Text();
+        grid.add(progressMessage, 0, 0, 3, 1);
+        progressMessage.textProperty().bind(task.messageProperty());
+        
+        ProgressBar progressBar = new ProgressBar();
+        grid.add(progressBar, 0, 1, 3, 1);
+        progressBar.progressProperty().bind(task.progressProperty());
+        
+        progressStage.initOwner(stage);
+        progressStage.show();
+        
+        new Thread(task).start();
     }
 
     private static FileChooser configureFileChooser() {
@@ -78,7 +121,7 @@ public class ImportGnuCashAction {
         return fileChooser;
     }
 
-    private static class ImportTask extends Task<Void> {
+    private class ImportTask extends Task<Void> {
 
         private final String gnuCashFileName;
         private final String jGnashFileName;
@@ -128,9 +171,18 @@ public class ImportGnuCashAction {
             alert.initOwner(stage);
 
             alert.showAndWait();
+            progressStage.close();
         }
 
         private void onSuccess() {
+            final Alert alert = new Alert(Alert.AlertType.INFORMATION, this.errorMsg);
+
+            alert.setTitle(GnuCashConvertUtil.getString("Title.ImportComplete"));
+            alert.setContentText(GnuCashConvertUtil.getString("Message.ImportComplete", gnuCashFileName, jGnashFileName));
+            alert.initOwner(stage);
+
+            alert.showAndWait();
+            progressStage.close();
         }
     }
 

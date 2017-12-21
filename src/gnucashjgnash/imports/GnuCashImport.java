@@ -52,21 +52,20 @@ public class GnuCashImport {
         return errorMsg;
     }
 
-    /**
-     * Steps for converting a Gnucash file to a jGnash database:
-     * 1. Unzip the file if needed.
-     * 2. Parse the XML. In a simple Gnucash file have:
-     *      gnc:commodity
-     *      gnc:pricedb
-     *      gnc:account
-     *      gnc:transaction
-     *
-     */
 
     public interface StatusCallback {
         void updateStatus(long progress, long total, String statusMsg);
     }
 
+    
+    /**
+     * The main entry point.
+     * @param gnuCashFileName
+     * @param jGnashFileName
+     * @param dataStoreType
+     * @param statusCallback
+     * @return
+     */
     public boolean convertGnuCashToJGnash(final String gnuCashFileName, final String jGnashFileName, final DataStoreType dataStoreType,
                                           StatusCallback statusCallback) {
         errorMsg = null;
@@ -107,6 +106,9 @@ public class GnuCashImport {
 
                 Files.createDirectories(Paths.get(jGnashFileName).getParent());
 
+                if (statusCallback != null) {
+                		statusCallback.updateStatus(0, 100, GnuCashConvertUtil.getString("Message.Status.InitializingJGnashFile", jGnashFileName));
+                }
                 engine = EngineFactory.bootLocalEngine(jGnashFileName, EngineFactory.DEFAULT, password.toCharArray(), dataStoreType);
 
             } catch (IOException e) {
@@ -197,6 +199,9 @@ public class GnuCashImport {
                 jGnashTransactionFactoryLogger.setLevel(Level.WARNING);
             }
             
+            if (statusCallback != null) {
+            		statusCallback.updateStatus(1, 100, GnuCashConvertUtil.getString("Message.Status.ParsingGnuCashFile", gnuCashFileName));
+            }
             
             if (parserFactory == null) {
                 parserFactory = SAXParserFactory.newInstance();

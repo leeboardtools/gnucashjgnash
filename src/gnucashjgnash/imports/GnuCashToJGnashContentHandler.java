@@ -28,6 +28,7 @@ import org.xml.sax.SAXException;
 import gnucashjgnash.GnuCashConvertUtil;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -578,7 +579,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
 
     protected boolean setupCommodities() {
-        updateStatusCallback(0, GnuCashConvertUtil.getString("Message.Status.ImportingCommodities"));
+        updateStatusCallback(0, GnuCashConvertUtil.getString("Message.Status.ImportingCommodities", this.commodityEntries.size()));
         
         Integer expectedCount = this.countData.get("commodity");
         if (expectedCount != null) {
@@ -599,9 +600,10 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
 
     protected boolean setupPrices() {
-        updateStatusCallback(0, GnuCashConvertUtil.getString("Message.Status.ImportingCommodityPrices"));
         
         for (Map.Entry<String, SortedMap<LocalDate, PriceEntry>> entry : this.sortedPriceEntries.entrySet()) {
+            updateStatusCallback(0, GnuCashConvertUtil.getString("Message.Status.ImportingCommodityPrices", entry.getKey()));
+
             SecurityNode securityNode = this.jGnashSecurities.get(entry.getKey());
             if (securityNode != null) {
                 if (!setupPricesForAccount(securityNode, entry.getValue())) {
@@ -666,7 +668,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
 
     protected boolean setupAccounts() {
-        updateStatusCallback(0, GnuCashConvertUtil.getString("Message.Status.SettingUpAccounts"));
+        updateStatusCallback(0, GnuCashConvertUtil.getString("Message.Status.SettingUpAccounts", this.accountImportEntries.size()));
         
         Integer expectedCount = this.countData.get("account");
         if (expectedCount != null) {
@@ -723,7 +725,6 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     
     
     protected boolean processTransactions() {
-        updateStatusCallback(0, GnuCashConvertUtil.getString("Message.Status.ProcessingTransactions"));
         
         Integer expectedCount = this.countData.get("transaction");
         if (expectedCount != null) {
@@ -734,6 +735,8 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         
         int count = 0;
         for (Map.Entry<LocalDate, Map<String, TransactionImportEntry>> dateEntry : this.transactionEntriesByDate.entrySet()) {
+            updateStatusCallback(0, GnuCashConvertUtil.getString("Message.Status.ProcessingTransactions", this.totalTransactionEntryCount, dateEntry.getKey().format(DateTimeFormatter.ISO_DATE)));
+            
             Map<String, TransactionImportEntry> entriesForDate = dateEntry.getValue();
             for (Map.Entry<String, TransactionImportEntry> entry : entriesForDate.entrySet()) {
                 TransactionImportEntry transactionEntry = entry.getValue();
