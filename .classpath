@@ -36,14 +36,14 @@
 	<classpathentry kind="lib" path="../jgnash_install/lib/jboss-transaction-api_1.2_spec-1.0.1.Final.jar"/>
 	<classpathentry kind="lib" path="../jgnash_install/lib/jcommon-1.0.23.jar"/>
 	<classpathentry kind="lib" path="../jgnash_install/lib/jfreechart-1.0.19.jar"/>
-	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-bayes-2.33.3.jar"/>
-	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-convert-2.33.3.jar"/>
-	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-core-2.33.3.jar" sourcepath="/Users/albert/Projects/OpenSource/jgnash"/>
-	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-fx-2.33.3.jar" sourcepath="/media/albert/DataDrive/Albert/Projects/OpenSource/jgnash"/>
-	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-plugin-2.33.3.jar"/>
-	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-report-core-2.33.3.jar" sourcepath="/media/albert/DataDrive/Albert/Projects/OpenSource/jgnash"/>
-	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-resources-2.33.3.jar"/>
-	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-swing-2.33.3.jar"/>
+	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-bayes-2.33.3.jar" sourcepath="../jgnash"/>
+	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-convert-2.33.3.jar" sourcepath="../jgnash"/>
+	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-core-2.33.3.jar" sourcepath="../jgnash"/>
+	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-fx-2.33.3.jar" sourcepath="../jgnash"/>
+	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-plugin-2.33.3.jar" sourcepath="../jgnash"/>
+	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-report-core-2.33.3.jar" sourcepath="../jgnash"/>
+	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-resources-2.33.3.jar" sourcepath="../jgnash"/>
+	<classpathentry kind="lib" path="../jgnash_install/lib/jgnash-swing-2.33.3.jar" sourcepath="../jgnash"/>
 	<classpathentry kind="lib" path="../jgnash_install/lib/jgoodies-common-1.8.1.jar"/>
 	<classpathentry kind="lib" path="../jgnash_install/lib/jgoodies-forms-1.8.0.jar"/>
 	<classpathentry kind="lib" path="../jgnash_install/lib/jgoodies-looks-2.7.0.jar"/>
