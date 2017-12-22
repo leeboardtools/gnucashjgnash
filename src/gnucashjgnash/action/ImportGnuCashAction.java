@@ -92,10 +92,12 @@ public class ImportGnuCashAction {
         progressStage.setScene(scene);
         
         Text progressMessage = new Text();
+        progressMessage.setWrappingWidth(400);
         grid.add(progressMessage, 0, 0, 3, 1);
         progressMessage.textProperty().bind(task.messageProperty());
         
         ProgressBar progressBar = new ProgressBar();
+        progressBar.setMaxWidth(Double.MAX_VALUE);
         grid.add(progressBar, 0, 1, 3, 1);
         progressBar.progressProperty().bind(task.progressProperty());
         

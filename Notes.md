@@ -14,7 +14,5 @@
 
 
 # Next Up
-- Decimate the historical quotes over 1 year old to oldest value each month.
 - Scheduled transactions
-- Add progress window.
 - Add display of warnings.
