@@ -59,7 +59,7 @@ public class ImportGnuCashAction {
         final FileChooser fileChooser = configureFileChooser();
         fileChooser.setTitle(resources.getString("Title.SelFile"));
 
-        DataStoreType dataStoreType = DataStoreType.H2MV_DATABASE;
+        DataStoreType dataStoreType = DataStoreType.BINARY_XSTREAM;
 
         final File file = fileChooser.showOpenDialog(stage);
         if (file == null) {
