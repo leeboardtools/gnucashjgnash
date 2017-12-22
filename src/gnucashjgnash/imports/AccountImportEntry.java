@@ -50,7 +50,7 @@ class AccountImportEntry {
         AccountImportEntry accountEntry = new AccountImportEntry();
 
         AccountStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler, String elementName) {
-            super(contentHandler, parentStateHandler, elementName, null);
+            super(contentHandler, parentStateHandler, elementName);
         }
 
         @Override
@@ -137,11 +137,7 @@ class AccountImportEntry {
                 return;
             }
 
-            if (this.contentHandler.accountImportEntries.containsKey(this.accountEntry.id.id)) {
-                recordWarning("MultipleAccountEntries", "Message.Parse.XMLMultipleAccountEntries", this.accountEntry.name, this.accountEntry.id);
-            }
-            this.contentHandler.accountImportEntries.put(this.accountEntry.id.id, this.accountEntry);
-            LOG.info("Added account entry " + this.accountEntry.name);
+            this.contentHandler.addAccountEntry(this.accountEntry);
         }
     }
 

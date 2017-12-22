@@ -47,7 +47,7 @@ public class CommodityEntry {
 
         CommodityStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler, 
                               String elementName) {
-            super(contentHandler, parentStateHandler, elementName, null);
+            super(contentHandler, parentStateHandler, elementName);
         }
 
         @Override

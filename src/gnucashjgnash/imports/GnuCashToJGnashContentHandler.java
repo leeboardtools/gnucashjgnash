@@ -67,10 +67,20 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     //final Map<String, TransactionImportEntry> transactionEntries = new HashMap<>();
     final SortedMap<LocalDate, Map<String, TransactionImportEntry>> transactionEntriesByDate = new TreeMap<>();
     int totalTransactionEntryCount;
+    
+    final Map<String, ScheduledTransactionEntry> scheduledTransactionEntries = new HashMap<>();
 
     final Set<String> recordedWarningMsgIds = new HashSet<>();
     final List<String> recordedWarnings = new ArrayList<>();
     String errorMsg;
+    
+    TransactionMode transactionMode = TransactionMode.NORMAL;
+    
+    
+    static enum TransactionMode {
+    	NORMAL,
+    	TEMPLATE,
+    }
 
 
     GnuCashToJGnashContentHandler(Engine engine, GnuCashImport.StatusCallback statusCallback) {
@@ -387,8 +397,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     static abstract class AbstractVersionStateHandler extends AbstractStateHandler {
         String version;
 
-        AbstractVersionStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler, String elementName,
-                                    Map<String, StateHandlerCreator> qNameToStateHandlers) {
+        AbstractVersionStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler, String elementName) {
             super(contentHandler, parentStateHandler, elementName);
         }
 
@@ -415,7 +424,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
     static class BookStateHandler extends AbstractVersionStateHandler {
         BookStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler, String elementName) {
-            super(contentHandler, parentStateHandler, elementName, null);
+            super(contentHandler, parentStateHandler, elementName);
         }
 
         /* (non-Javadoc)
@@ -445,9 +454,12 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
             case "gnc:count-data" :
                 return new CountDataStateHandler(this.contentHandler, this, qName);
                 
+            case "gnc:schedxaction":
+                return new ScheduledTransactionEntry.ScheduledTransactionStateHandler(this.contentHandler, this, qName);
                 
             case "gnc:template-transactions":
-            case "gnc:schedxaction":
+                return new TemplateTransactionsStateHandler(this.contentHandler, this, qName);
+
             case "gnc:budget":
                 return new SkipStateHandler(this.contentHandler, this, qName);
                 
@@ -455,6 +467,49 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
             return super.getStateHandlerForElement(qName);
         }
+    }
+    
+    static class TemplateTransactionsStateHandler extends AbstractStateHandler {
+
+		TemplateTransactionsStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
+				String elementName) {
+			super(contentHandler, parentStateHandler, elementName);
+		}
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
+		 */
+		@Override
+		protected StateHandler getStateHandlerForElement(String qName) {
+			switch (qName) {
+			case "gnc:account":
+                return new AccountImportEntry.AccountStateHandler(this.contentHandler, this, qName);
+
+			case "gnc:transaction":
+                return new TransactionImportEntry.TransactionStateHandler(this.contentHandler, this, qName);
+			}
+			
+			return super.getStateHandlerForElement(qName);
+		}
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
+		 */
+		@Override
+		public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+			this.contentHandler.transactionMode = TransactionMode.TEMPLATE;
+			super.startElement(uri, localName, qName, atts);
+		}
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
+		 */
+		@Override
+		public void endElement(String uri, String localName, String qName) throws SAXException {
+			super.endElement(uri, localName, qName);
+			this.contentHandler.transactionMode = TransactionMode.NORMAL;
+		}
+    	
     }
 
 
@@ -523,21 +578,55 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         return true;
     }
     
+    boolean addAccountEntry(AccountImportEntry entry) {
+    	switch (this.transactionMode) {
+    	case NORMAL :
+            if (this.accountImportEntries.containsKey(entry.id.id)) {
+                recordWarning("MultipleAccountEntries", "Message.Parse.XMLMultipleAccountEntries", entry.name, entry.id);
+            }
+            this.accountImportEntries.put(entry.id.id, entry);
+    		break;
+    		
+    	case TEMPLATE :
+    		// TODO Implement addAccountEntry() for TEMPLATE mode.
+    		System.out.println("add TEMPLATE AccountEntry: " + entry.name);
+    		break;
+    	}
+    	return true;
+    }
+    
+    
     boolean addTransactionEntry(TransactionImportEntry entry) {
-        Map<String, TransactionImportEntry> dateEntries = this.transactionEntriesByDate.get(entry.datePosted.localDate);
-        if (dateEntries == null) {
-            dateEntries = new HashMap<>();
-            this.transactionEntriesByDate.put(entry.datePosted.localDate, dateEntries);
-        }
-        if (dateEntries.put(entry.id.id, entry) != null) {
-            recordWarning("DuplicateTransaction", "Message.Parse.XMLDuplicateTransaction", entry.id, entry.datePosted.toDateString());
-        }
-        else {
-            ++this.totalTransactionEntryCount;
-        }
+    	switch (this.transactionMode) {
+    	case NORMAL :
+            Map<String, TransactionImportEntry> dateEntries = this.transactionEntriesByDate.get(entry.datePosted.localDate);
+            if (dateEntries == null) {
+                dateEntries = new HashMap<>();
+                this.transactionEntriesByDate.put(entry.datePosted.localDate, dateEntries);
+            }
+            if (dateEntries.put(entry.id.id, entry) != null) {
+                recordWarning("DuplicateTransaction", "Message.Parse.XMLDuplicateTransaction", entry.id, entry.datePosted.toDateString());
+            }
+            else {
+                ++this.totalTransactionEntryCount;
+            }
+            break;
+            
+    	case TEMPLATE :
+    		// TODO Implement addTransactionEntry() for TEMPLATE mode.
+    		System.out.println("add TEMPLATE TransactionEntry: " + entry.description);
+    		break;
+    	}
         
         return true;
     }
+    
+    
+    boolean addScheduledTransactionEntry(ScheduledTransactionEntry entry) {
+    	System.out.println("Add Scheduled Transaction Entry: " + entry.name);
+    	return true;
+    }
+    
     
     void updateStatusCallback(long toAdd, String statusMsg) {
         if (this.statusCallback != null) {

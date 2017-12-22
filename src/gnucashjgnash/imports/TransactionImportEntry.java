@@ -66,7 +66,7 @@ public class TransactionImportEntry {
          */
         TransactionStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
                 String elementName) {
-            super(contentHandler, parentStateHandler, elementName, null);
+            super(contentHandler, parentStateHandler, elementName);
         }
 
         /* (non-Javadoc)

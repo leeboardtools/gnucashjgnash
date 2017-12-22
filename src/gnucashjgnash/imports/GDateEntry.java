@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler;
+import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 
 /**
@@ -31,16 +32,48 @@ public class GDateEntry {
     String parseError;
     
     
+    public boolean validateParse(StateHandler stateHandler, String qName) {
+    	if (this.parseError != null) {
+            stateHandler.recordWarning("GDateParseError_" + qName, "Message.Parse.XMLGDateParseError", qName, this.parseError);
+    		return false;
+    	}
+    	return true;
+    }
+    
+    
     public static class GDateStateHandler extends AbstractStateHandler {
         final GDateEntry gDateEntry;
+        String gDateValueStr;
         
         GDateStateHandler(GDateEntry gDateEntry, GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
                 String elementName) {
             super(contentHandler, parentStateHandler, elementName);
             this.gDateEntry = gDateEntry;
         }
+        
+        
 
         /* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
+		 */
+		@Override
+		protected StateHandler getStateHandlerForElement(String qName) {
+			switch (qName) {
+			case "gdate" :
+                return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+                    @Override
+                    protected void setGDateEntryField(GDateEntry timeEntry, String value,
+                    		GDateStateHandler parentStateHandler) {
+                       	parentStateHandler.gDateValueStr = characters;
+                    }
+                });
+			}
+			
+			return super.getStateHandlerForElement(qName);
+		}
+
+
+		/* (non-Javadoc)
          * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#endState()
          */
         @Override
@@ -49,7 +82,8 @@ public class GDateEntry {
             
             try {
                 this.gDateEntry.parseError = null;
-                this.gDateEntry.localDate = LocalDate.parse(this.characters);
+                String valueStr = (this.gDateValueStr == null) ? this.characters : this.gDateValueStr;
+                this.gDateEntry.localDate = LocalDate.parse(valueStr);
             }
             catch (DateTimeParseException e) {
                 this.gDateEntry.parseError = e.getLocalizedMessage();
@@ -57,4 +91,17 @@ public class GDateEntry {
         }
         
     }
+
+
+    static abstract class SimpleDataSetterImpl extends GnuCashToJGnashContentHandler.AbstractSimpleDataSetter {
+        @Override
+        public void setData(String characters, GnuCashToJGnashContentHandler.SimpleDataStateHandler stateHandler) {
+            GDateStateHandler parentStateHandler = (GDateStateHandler)stateHandler.parentStateHandler;
+            setGDateEntryField(parentStateHandler.gDateEntry, characters, parentStateHandler);
+        }
+
+        protected abstract void setGDateEntryField(GDateEntry timeEntry, String value,
+        		GDateStateHandler parentStateHandler);
+    }
+    
 }

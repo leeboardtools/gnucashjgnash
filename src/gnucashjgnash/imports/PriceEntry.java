@@ -39,7 +39,7 @@ public class PriceEntry {
 
         PriceDBStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
                             String elementName) {
-            super(contentHandler, parentStateHandler, elementName, null);
+            super(contentHandler, parentStateHandler, elementName);
         }
 
         @Override
