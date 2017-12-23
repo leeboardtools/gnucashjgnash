@@ -9,11 +9,11 @@ I also did not use money market accounts.
 
 # REMEMBER
 Make sure you:
-    - **Are aware that you are using this at your own risk!**
-    - Verify the balances in the jGnash accounts against your GnuCash accounts!
-    - Verify any scheduled transactions!
-    - Get your GnuCash database up-to-date before conversion! (i.e. make sure any pending scheduled transactions, etc. are run)
-    - Read the following notes!
+- **Are aware that you are using this at your own risk!**
+- Verify the balances in the jGnash accounts against your GnuCash accounts!
+- Verify any scheduled transactions!
+- Get your GnuCash database up-to-date before conversion! (i.e. make sure any pending scheduled transactions, etc. are run)
+- Read the following notes!
 
 
 Some of the items to note (most of this is based upon information in the GnuCash document
