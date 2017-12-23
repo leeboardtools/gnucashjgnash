@@ -35,6 +35,7 @@ https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc
 	 	- Checking
 	 	- Savings (converted to jGnash Checking)
 	 	- Moneymrkt (this has not been tested)
+	 - Smallest currency units (act:commodity-scu and act:non-standard-scu) are currently ignored.
 
 - Stocks:
     - Stocks are imported based upon the stock symbol, such as AAPL (cmdty:id in the XML file), the Type (NASDAQ, NYSE, etc.)

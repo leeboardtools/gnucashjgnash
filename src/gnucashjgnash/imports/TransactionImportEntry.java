@@ -41,6 +41,7 @@ import jgnash.engine.TransactionFactory;
 import jgnash.engine.TransactionTag;
 
 /**
+ * Represents a parsed GnuCash Transaction from <a href="https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc" target="_blank" rel="noopener noreferrer">gnucash-v2.rnc</a>
  * @author albert
  *
  */
@@ -169,7 +170,7 @@ public class TransactionImportEntry {
      * The main entry point for generating the jGnash transactions, this one adds them to the jGnash engine.
      * @param contentHandler
      * @param engine
-     * @return
+     * @return	<code>false</code> if failed.
      */
     public boolean generateJGnashTransaction(GnuCashToJGnashContentHandler contentHandler, Engine engine) {
     	ArrayList<Transaction> jGnashTransactions = new ArrayList<>();
@@ -189,7 +190,7 @@ public class TransactionImportEntry {
      * The main entry point for generating the jGnash transactions.
      * @param contentHandler
      * @param jGnashTransactions
-     * @return
+     * @return	<code>false</code> if failed.
      */
     public boolean generateJGnashTransaction(GnuCashToJGnashContentHandler contentHandler, List<Transaction> jGnashTransactions) {
         for (SplitEntry splitEntry : this.originalSplitsList) {

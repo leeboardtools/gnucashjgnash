@@ -32,6 +32,18 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Logger;
 
+
+/**
+ * This is the main worker class. It implements the SAX content handler for parsing the GnuCash XML file,
+ * as well as managing the conversion of the parsed contents to jGnash format.
+ * <p>
+ * The XML parsing is handled via {@link GnuCashToJGnashContentHandler.StateHandler} objects. These operating on the individual XML elements.
+ * A stack of {@link GnuCashToJGnashContentHandler.StateHandler} objects is maintained as the XML tree is descended.
+ * <p>
+ * 
+ * @author albert
+ *
+ */
 public class GnuCashToJGnashContentHandler implements ContentHandler {
     private static final Logger LOG = Logger.getLogger(GnuCashToJGnashContentHandler.class.getName());
 
@@ -185,12 +197,6 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
 
 
-    interface StateHandlerCreator {
-        StateHandler createStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
-                                        String elementName);
-    }
-
-
 
     abstract static class AbstractStateHandler implements StateHandler {
         final GnuCashToJGnashContentHandler contentHandler;
@@ -260,6 +266,11 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
 
 
+    /**
+     * The default state handler, this prints the element name to the console.
+     * @author albert
+     *
+     */
     static class NOP_StateHandler extends AbstractStateHandler {
         NOP_StateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
                          String elementName) {
@@ -281,6 +292,12 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     }
 
     
+    /**
+     * State handler for skipping an element and all its children. The element name is printed
+     * to the console, all the child elements are ignored.
+     * @author albert
+     *
+     */
     static class SkipStateHandler extends AbstractStateHandler {
 
         SkipStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
@@ -313,6 +330,11 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     }
 
 
+    /**
+     * The outer-most state handler, what we start with.
+     * @author albert
+     *
+     */
     static class OuterStateHandler extends AbstractStateHandler {
 
         OuterStateHandler(GnuCashToJGnashContentHandler contentHandler) {
@@ -401,6 +423,11 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     }
 
 
+    /**
+     * State handler for elements that have a version attribute to be validated.
+     * @author albert
+     *
+     */
     static abstract class AbstractVersionStateHandler extends AbstractStateHandler {
         String version;
 
@@ -476,6 +503,11 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         }
     }
     
+    /**
+     * State handler for the template transactions.
+     * @author albert
+     *
+     */
     static class TemplateTransactionsStateHandler extends AbstractStateHandler {
 
 		TemplateTransactionsStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
@@ -520,6 +552,9 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     }
 
 
+    /**
+     * Interface called by {@link SimpleDataStateHandler} to have the data value set.
+     */
     public interface SimpleDataSetter {
         public void setAttributes(Attributes atts, SimpleDataStateHandler stateHandler);
         public void setData(String characters, SimpleDataStateHandler stateHandler);
@@ -532,6 +567,12 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         }
     }
 
+    /**
+     * A {@link GnuCashToJGnashContentHandler.StateHandler} that passes information to a {@link SimpleDataSetter}. This is used for simple
+     * elements that just need to record the value of the element somewhere.
+     * @author albert
+     *
+     */
     public static class SimpleDataStateHandler extends AbstractStateHandler {
         final SimpleDataSetter dataSetter;
         SimpleDataStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler, String elementName, SimpleDataSetter dataSetter) {
@@ -639,6 +680,11 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     }
     
     
+    /**
+     * Calls the installed StatusCallback, if any, with an updated progress/status.
+     * @param toAdd	The amount to increase the current progress by.
+     * @param statusMsg	If not null, the status message to set.
+     */
     void updateStatusCallback(long toAdd, String statusMsg) {
         if (this.statusCallback != null) {
             this.statusProgressCount += toAdd;
@@ -647,6 +693,10 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     }
 
 
+    /**
+     * The main entry point for generating the jGnash database after the GnuCash file has been parsed.
+     * @return	<code>false</code> if failed.
+     */
     public boolean generateJGnashDatabase() {
         this.errorMsg = null;
         

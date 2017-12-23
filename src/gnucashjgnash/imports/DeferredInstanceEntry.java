@@ -20,6 +20,7 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 
 /**
+ * Represents a parsed GnuCash DeferredInstance from <a href="https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc" target="_blank" rel="noopener noreferrer">gnucash-v2.rnc</a>
  * @author albert
  *
  */

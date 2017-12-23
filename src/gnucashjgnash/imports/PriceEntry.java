@@ -24,6 +24,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 
+/**
+ * Represents a parsed GnuCash Price from <a href="https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc" target="_blank" rel="noopener noreferrer">gnucash-v2.rnc</a>
+ * @author albert
+ *
+ */
 public class PriceEntry {
     IdEntry id = new IdEntry();
     CommodityEntry.CommodityRef commodityRef = new CommodityEntry.CommodityRef();

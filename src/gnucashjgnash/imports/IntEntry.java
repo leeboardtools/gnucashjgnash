@@ -20,13 +20,14 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 
 /**
+ * Represents a parsed xsd:int.
  * @author albert
  *
  */
 public class IntEntry {
 	int value;
 	String parseError;
-	boolean wasParsed;
+	boolean isParsed;
 	
 	
 	public boolean validateParse(StateHandler stateHandler, String qName) {
@@ -56,7 +57,7 @@ public class IntEntry {
 			
 			try {
 				this.intEntry.value = Integer.parseInt(this.characters);
-				this.intEntry.wasParsed = true;
+				this.intEntry.isParsed = true;
 			}
 			catch (NumberFormatException e) {
 				this.intEntry.parseError = e.getLocalizedMessage();

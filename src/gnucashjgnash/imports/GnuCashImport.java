@@ -64,7 +64,7 @@ public class GnuCashImport {
      * @param jGnashFileName
      * @param dataStoreType
      * @param statusCallback
-     * @return
+     * @return	<code>false</code> if failed.
      */
     public boolean convertGnuCashToJGnash(final String gnuCashFileName, final String jGnashFileName, final DataStoreType dataStoreType,
                                           StatusCallback statusCallback) {

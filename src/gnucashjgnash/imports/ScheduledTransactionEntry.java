@@ -38,6 +38,7 @@ import jgnash.engine.recurring.Reminder;
 import jgnash.engine.recurring.WeeklyReminder;
 
 /**
+ * Represents a parsed GnuCash ScheduledTransaction from <a href="https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc" target="_blank" rel="noopener noreferrer">gnucash-v2.rnc</a>
  * @author albert
  *
  */
@@ -245,6 +246,12 @@ public class ScheduledTransactionEntry {
  
     
     
+    /**
+     * Called by {@link GnuCashToJGnashContentHandler} to process the template transactions.
+     * @param contentHandler
+     * @param engine
+     * @return	<code>false</false> if failed.
+     */
     public static boolean processTemplateTransactions(GnuCashToJGnashContentHandler contentHandler, Engine engine) {
     	// Each transaction...
     	for (Map.Entry<String, TransactionImportEntry> entry : contentHandler.templateTransactionImportEntries.entrySet()) {
@@ -295,7 +302,13 @@ public class ScheduledTransactionEntry {
     }
     
     
-    
+    /**
+     * Converts a parsed template transaction import entry into a transaction import entry that can be used
+     * to generate the jGnash transactions. 
+     * @param originalTransactionEntry
+     * @param contentHandler
+     * @return	<code>false</code> if failed.
+     */
     public static TransactionImportEntry templateTransactionToNormal(TransactionImportEntry originalTransactionEntry,
     		GnuCashToJGnashContentHandler contentHandler) {
     	TransactionImportEntry normalTransactionEntry = new TransactionImportEntry();
@@ -378,6 +391,12 @@ public class ScheduledTransactionEntry {
     }
     
     
+    /**
+     * Called by {@link GnuCashToJGnashContentHandler} to generate and add the jGnash Reminders for this scheduled transaction.
+     * @param contentHandler
+     * @param engine
+     * @return	<code>false</code> if failed.
+     */
     public boolean generateJGnashScheduledTransaction(GnuCashToJGnashContentHandler contentHandler, Engine engine) {
     	AccountImportEntry templateAccount = contentHandler.templateAccountImportEntries.get(this.templateAccount.id);
     	if (templateAccount == null) {

@@ -24,6 +24,13 @@ import java.util.Map;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 
+
+/**
+ * Represents a parsed GnuCash Commodity from 
+ * <a href="https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc" target="_blank" rel="noopener noreferrer">gnucash-v2.rnc</a>.
+ * @author albert
+ *
+ */
 public class CommodityEntry {
     String space;
     String id;
@@ -181,7 +188,12 @@ public class CommodityEntry {
     }
 
 
-
+    
+    /**
+     * Represents a parsed commodity reference (act:commodity, price:currency, price:commodity, trn:currency, etc.)
+     * @author albert
+     *
+     */
     public static class CommodityRef {
         String space;
         String id;
@@ -258,6 +270,12 @@ public class CommodityEntry {
     }
 
     
+    /**
+     * Main method for creating/adding the jGnash equivalent commodity (currency or security).
+     * @param contentHandler
+     * @param engine
+     * @return	<code>false</code> if failed.
+     */
     public boolean createJGnashCommodity(GnuCashToJGnashContentHandler contentHandler, Engine engine) {
         if (this.isCurrency) {
             return createJGnashCurrency(contentHandler, engine);

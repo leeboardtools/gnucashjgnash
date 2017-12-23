@@ -16,11 +16,11 @@
 */
 package gnucashjgnash.imports;
 
-import gnucashjgnash.GnuCashConvertUtil;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 
 /**
+ * Represents a parsed GnuCash boolean value that takes either a "y" or "n" value.
  * @author albert
  *
  */

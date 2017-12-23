@@ -24,6 +24,11 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Represents a parsed GnuCash KvpValue from <a href="https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc" target="_blank" rel="noopener noreferrer">gnucash-v2.rnc</a>
+ * @author albert
+ *
+ */
 public class SlotEntry {
     String key;
     String valueType;
@@ -46,6 +51,11 @@ public class SlotEntry {
     }
 
 
+    /**
+     * {@link StateHandler} for parsing a group of slot entries, KvpSlot+ from <a href="https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc" target="_blank" rel="noopener noreferrer">gnucash-v2.rnc</a>
+     * @author albert
+     *
+     */
     static class SlotsStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
         final Map<String, SlotEntry> slotEntries;
         SlotsStateHandler(Map<String, SlotEntry> slotEntries, GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
@@ -70,6 +80,11 @@ public class SlotEntry {
     }
 
 
+    /**
+     * {@link StateHandler} for parsing a KvpSlot from <a href="https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc" target="_blank" rel="noopener noreferrer">gnucash-v2.rnc</a>
+     * @author albert
+     *
+     */
     static class SlotStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
         final Map<String, SlotEntry> slotEntries;
         final SlotEntry slotEntry = new SlotEntry();

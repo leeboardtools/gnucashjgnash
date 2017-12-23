@@ -32,6 +32,7 @@ import jgnash.engine.SecurityNode;
 
 
 /**
+ * Represents a parsed GnuCash Split from <a href="https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc" target="_blank" rel="noopener noreferrer">gnucash-v2.rnc</a>
  * @author albert
  *
  */
@@ -99,6 +100,11 @@ public class SplitEntry {
     }
 
     
+    /**
+     * {@link StateHandler} for Split+ from <a href="https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc" target="_blank" rel="noopener noreferrer">gnucash-v2.rnc</a>
+     * @author albert
+     *
+     */
     static class SplitsStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
         final Map<String, SplitEntry> splitEntries;
         final List<SplitEntry> splitEntriesList;
@@ -128,6 +134,11 @@ public class SplitEntry {
     }
 
 
+    /**
+     * {@link StateHandler} for a Split from <a href="https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc" target="_blank" rel="noopener noreferrer">gnucash-v2.rnc</a>
+     * @author albert
+     *
+     */
     static class SplitStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
         final Map<String, SplitEntry> splitEntries;
         final List<SplitEntry> splitEntriesList;

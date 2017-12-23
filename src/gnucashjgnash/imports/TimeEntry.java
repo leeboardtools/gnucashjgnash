@@ -23,6 +23,12 @@ import java.time.format.DateTimeParseException;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 
+
+/**
+ * Represents a parsed GnuCash TimeSpec from <a href="https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc" target="_blank" rel="noopener noreferrer">gnucash-v2.rnc</a>
+ * @author albert
+ *
+ */
 public class TimeEntry {
     LocalDate localDate = LocalDate.now();
     OffsetTime offsetTime = OffsetTime.now();

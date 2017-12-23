@@ -30,13 +30,19 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 import gnucashjgnash.imports.CommodityEntry.CommodityRef;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 
-class AccountImportEntry {
+/**
+ * Represents a parsed GnuCash Account from <a href="https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc" target="_blank" rel="noopener noreferrer">gnucash-v2.rnc</a>.
+ * @author albert
+ *
+ */
+public class AccountImportEntry {
     private static final Logger LOG = Logger.getLogger(AccountImportEntry.class.getName());
 
     String name;
     IdEntry id = new IdEntry();
     String type;
     CommodityRef commodityRef = new CommodityRef();
+    IntEntry commoditySCU = new IntEntry();
     String code;
     String description;
     IdEntry parentId = new IdEntry();
@@ -47,10 +53,6 @@ class AccountImportEntry {
     List<Transaction> jGnashTemplateTransactions = new ArrayList<>();
     
     
-
-    // Not yet supported:
-    // commodity-scu
-    // non-standard-scu
 
     static class AccountStateHandler extends GnuCashToJGnashContentHandler.AbstractVersionStateHandler {
         AccountImportEntry accountEntry = new AccountImportEntry();
@@ -111,12 +113,10 @@ class AccountImportEntry {
                 return new CommodityEntry.CommodityRefStateHandler(this.accountEntry.commodityRef, this.contentHandler, this, qName);
                 
             case "act:commodity-scu" :
-                // Smallest currency unit
-                return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
-                    @Override
-                    protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
-                    }
-                });
+            	return new IntEntry.IntEntryStateHandler(this.accountEntry.commoditySCU, this.contentHandler, this, qName);
+                
+            case "act:non-standard-scu" :
+            	break;
 
             }
 
@@ -142,6 +142,12 @@ class AccountImportEntry {
                 recordWarning("AccountMissingType", "Message.Parse.XMLAccountMissingElement", this.accountEntry.name, "act:type");
                 return;
             }
+            if (this.accountEntry.commoditySCU.isParsed) {
+            	if (this.accountEntry.commoditySCU.value != 1) {
+            		recordWarning("AccountCommoditySCUNotSupported", "Message.Parse.XMLAccountCommoditySCUNotSUpported", this.accountEntry.name);
+            		return;
+            	}
+            }
 
             this.contentHandler.addAccountEntry(this.accountEntry);
         }
@@ -159,7 +165,7 @@ class AccountImportEntry {
 
 
     /**
-     * Called by GnuCashToJGnashContentHandler to build the child AccountImportEntry objects for this entry.
+     * Called by {@link GnuCashToJGnashContentHandler} to build the child AccountImportEntry objects for this entry.
      * @param accountEntries
      */
     public void gatherChildAccountEntries(Map<String, AccountImportEntry> accountEntries) {
@@ -179,12 +185,12 @@ class AccountImportEntry {
 
 
     /**
-     * Called by GnuCashToJGnashContentHandler to generate the jGnash accounts for this and all the child AccountImportEntry objects.
+     * Called by {@link GnuCashToJGnashContentHandler} to generate the jGnash accounts for this and all the child AccountImportEntry objects.
      * @param contentHandler
      * @param engine
      * @param jGnashAccountEntries
      * @param accountIdsToIgnore
-     * @return
+     * @return	<code>false</code> if this failed.
      */
     public boolean createJGnashAccounts(GnuCashToJGnashContentHandler contentHandler, Engine engine,
                                  Map<String, Account> jGnashAccountEntries, Set<String> accountIdsToIgnore) {

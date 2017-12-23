@@ -20,6 +20,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 
+/**
+ * Represents a parsed GnuCash GncNumeric from <a href="https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc" target="_blank" rel="noopener noreferrer">gnucash-v2.rnc</a>
+ * @author albert
+ *
+ */
 public class NumericEntry {
     BigInteger numerator = null;
     BigInteger denominator = null;
