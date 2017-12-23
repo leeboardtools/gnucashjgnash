@@ -163,10 +163,9 @@ public class CommodityEntry {
                 }
             }
 
-            if (this.contentHandler.commodityEntries.containsKey(this.commodityEntry.id)) {
+            if (this.contentHandler.commodityEntries.put(this.commodityEntry.id, this.commodityEntry) != null) {
                 recordWarning("DuplicateCommodityId", "Message.Parse.XMLDuplicateCommodityId", this.commodityEntry.id);
             }
-            this.contentHandler.commodityEntries.put(this.commodityEntry.id, this.commodityEntry);
         }
     }
 

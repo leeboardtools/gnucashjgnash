@@ -114,10 +114,9 @@ public class SlotEntry {
                 return;
             }
 
-            if (this.slotEntries.containsKey(this.slotEntry.key)) {
+            if (this.slotEntries.put(this.slotEntry.key, this.slotEntry) != null) {
                 recordWarning("DuplicateSlotKey", "Message.Parse.XMLDuplicateSlotKey", this.elementName, this.slotEntry.key);
             }
-            this.slotEntries.put(this.slotEntry.key, this.slotEntry);
         }
     }
 

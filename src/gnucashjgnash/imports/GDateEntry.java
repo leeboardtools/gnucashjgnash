@@ -29,6 +29,7 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
  */
 public class GDateEntry {
     LocalDate localDate = LocalDate.now();
+    boolean isParsed = false;
     String parseError;
     
     
@@ -64,7 +65,7 @@ public class GDateEntry {
                     @Override
                     protected void setGDateEntryField(GDateEntry timeEntry, String value,
                     		GDateStateHandler parentStateHandler) {
-                       	parentStateHandler.gDateValueStr = characters;
+                       	parentStateHandler.gDateValueStr = value;
                     }
                 });
 			}
@@ -84,6 +85,7 @@ public class GDateEntry {
                 this.gDateEntry.parseError = null;
                 String valueStr = (this.gDateValueStr == null) ? this.characters : this.gDateValueStr;
                 this.gDateEntry.localDate = LocalDate.parse(valueStr);
+                this.gDateEntry.isParsed = true;
             }
             catch (DateTimeParseException e) {
                 this.gDateEntry.parseError = e.getLocalizedMessage();

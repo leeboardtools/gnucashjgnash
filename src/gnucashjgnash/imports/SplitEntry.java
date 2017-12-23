@@ -217,10 +217,9 @@ public class SplitEntry {
                 return;
             }
             
-            if (this.splitEntries.containsKey(this.splitEntry.id.id)) {
+            if (this.splitEntries.put(this.splitEntry.id.id, this.splitEntry) != null) {
                 recordWarning("DuplicateSplitEntries", "Message.Parse.XMLDuplicateSplitEntries", this.splitEntry.id.id);
             }
-            this.splitEntries.put(this.splitEntry.id.id, this.splitEntry);
             if (this.splitEntriesList != null) {
                 this.splitEntriesList.add(this.splitEntry);
             }

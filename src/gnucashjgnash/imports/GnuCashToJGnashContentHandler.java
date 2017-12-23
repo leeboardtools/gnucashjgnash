@@ -56,7 +56,6 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     final Map<String, SortedMap<LocalDate, PriceEntry>> sortedPriceEntries = new HashMap<>();
 
     final Map<String, AccountImportEntry> accountImportEntries = new HashMap<>();
-    final Set<String> accountIdsInUse = new HashSet<>();
 
     final Set<String> accountIdsToIgnore = new HashSet<>();
 
@@ -68,7 +67,10 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     final SortedMap<LocalDate, Map<String, TransactionImportEntry>> transactionEntriesByDate = new TreeMap<>();
     int totalTransactionEntryCount;
     
+    final Map<String, AccountImportEntry> templateAccountImportEntries = new HashMap<>();
+    final Map<String, TransactionImportEntry> templateTransactionImportEntries = new HashMap<>();
     final Map<String, ScheduledTransactionEntry> scheduledTransactionEntries = new HashMap<>();
+    int totalScheduledTransactionEntryCount;
 
     final Set<String> recordedWarningMsgIds = new HashSet<>();
     final List<String> recordedWarnings = new ArrayList<>();
@@ -78,8 +80,13 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     
     
     static enum TransactionMode {
-    	NORMAL,
-    	TEMPLATE,
+    	NORMAL(""),
+    	TEMPLATE("Template");
+    	
+    	final String idSuffix;
+    	TransactionMode(String idSuffix) {
+    		this.idSuffix = idSuffix;
+    	}
     }
 
 
@@ -581,15 +588,15 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     boolean addAccountEntry(AccountImportEntry entry) {
     	switch (this.transactionMode) {
     	case NORMAL :
-            if (this.accountImportEntries.containsKey(entry.id.id)) {
+            if (this.accountImportEntries.put(entry.id.id, entry) != null) {
                 recordWarning("MultipleAccountEntries", "Message.Parse.XMLMultipleAccountEntries", entry.name, entry.id);
             }
-            this.accountImportEntries.put(entry.id.id, entry);
     		break;
     		
     	case TEMPLATE :
-    		// TODO Implement addAccountEntry() for TEMPLATE mode.
-    		System.out.println("add TEMPLATE AccountEntry: " + entry.name);
+            if (this.templateAccountImportEntries.put(entry.id.id, entry) != null) {
+                recordWarning("MultipleTemplateAccountEntries", "Message.Parse.XMLMultipleTemplateAccountEntries", entry.name, entry.id);
+            }
     		break;
     	}
     	return true;
@@ -613,8 +620,9 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
             break;
             
     	case TEMPLATE :
-    		// TODO Implement addTransactionEntry() for TEMPLATE mode.
-    		System.out.println("add TEMPLATE TransactionEntry: " + entry.description);
+    		if (this.templateTransactionImportEntries.put(entry.id.id, entry) != null) {
+                recordWarning("DuplicateTemplateTransaction", "Message.Parse.XMLDuplicateTemplateTransaction", entry.id, entry.datePosted.toDateString());
+    		}
     		break;
     	}
         
@@ -623,7 +631,10 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     
     
     boolean addScheduledTransactionEntry(ScheduledTransactionEntry entry) {
-    	System.out.println("Add Scheduled Transaction Entry: " + entry.name);
+    	if (this.scheduledTransactionEntries.put(entry.id.id, entry) != null) {
+    		recordWarning("DuplicateScheduledTransaction", "Message.Parse.XMLDuplicateScheduledTransaction", entry.id, entry.name);
+    	}
+    	++this.totalScheduledTransactionEntryCount;
     	return true;
     }
     
@@ -659,10 +670,13 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         }
         
         if (!processTransactions()) {
-                return false;
+            return false;
         }
         
-        // TODO scheduled transactions
+        if (!processScheduledTransactions()) {
+        	return false;
+        }
+
         return true;
     }
 
@@ -706,6 +720,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         return true;
     }
     
+
     protected boolean setupPricesForAccount(SecurityNode securityNode, SortedMap<LocalDate, PriceEntry> priceEntriesByDate) {
         if (priceEntriesByDate.isEmpty()) {
             return true;
@@ -774,7 +789,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         for (Map.Entry<String, AccountImportEntry> entry : this.accountImportEntries.entrySet()) {
             if (entry.getValue().type.equals("ROOT")) {
                 if (rootAccountEntry != null) {
-                    recordError("Message.Error.MultipleRootAccounts");
+                    recordError("Message.Error.MultipleRootAccounts" + this.transactionMode.idSuffix);
                     return false;
                 }
                 rootAccountEntry = entry.getValue();
@@ -785,23 +800,15 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         }
 
         if (rootAccountEntry == null) {
-            recordError("Message.Error.RootAccountNotFound");
+            recordError("Message.Error.RootAccountNotFound" + this.transactionMode.idSuffix);
             return false;
         }
 
         rootAccountEntry.gatherChildAccountEntries(workingAccountEntries);
 
         if (!workingAccountEntries.isEmpty()) {
-            recordError("Message.Error.OrphanAccounts");
+            recordError("Message.Error.OrphanAccounts" + this.transactionMode.idSuffix);
             return false;
-        }
-
-        // Make sure all the accounts that have been referred to do in fact exist...
-        for (String id : this.accountIdsInUse) {
-            if (!this.accountImportEntries.containsKey(id)) {
-                recordError("Message.Error.MissingAccount");
-                return false;
-            }
         }
 
         // OK, ready to create the jGnash accounts!
@@ -812,6 +819,8 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         return true;
     }
     
+    
+   
     
     protected boolean processTransactions() {
         
@@ -844,4 +853,35 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         return true;
     }
 
+    
+    
+    protected boolean processScheduledTransactions() {
+        Integer expectedCount = this.countData.get("schedxaction");
+        if (expectedCount != null) {
+            if (expectedCount != this.totalScheduledTransactionEntryCount) {
+                recordWarning(null, "Message.Warning.ScheduledTransactionCountMismatch", expectedCount, this.totalScheduledTransactionEntryCount);
+            }
+        }
+        
+        // Process the template transactions.
+        if (!ScheduledTransactionEntry.processTemplateTransactions(this, this.engine)) {
+        	return false;
+        }
+        
+        updateStatusCallback(0, GnuCashConvertUtil.getString("Message.Status.ProcessingScheduledTransactions", this.totalScheduledTransactionEntryCount));
+
+        int count = 0;
+        for (Map.Entry<String, ScheduledTransactionEntry> entry : this.scheduledTransactionEntries.entrySet()) {
+        	ScheduledTransactionEntry scheduledTransactionEntry = entry.getValue();
+        	if (!scheduledTransactionEntry.generateJGnashScheduledTransaction(this, this.engine)) {
+        		return false;
+        	}
+        }
+        
+        LOG.info("Processed " + count + " scheduled transactions.");
+    	
+    	return true;
+    }
+    
+    
 }

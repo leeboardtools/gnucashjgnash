@@ -1,12 +1,19 @@
-# The plugin is NOT ready for use!
-As of this commit the plugin will import the basic accounts, stocks, and the stock historical prices. Transactions are a work in progress,
-particularly investment transactions.
+This is a jGnash plugin for a **Fairly Simple** Gnucash database into an equivalent jGnash database.
 
-This is a jGnash plugin for a fairly simple Gnucash database into an equivalent jGnash database.
-This has only been tested on GnuCash V 2.6.17/2.6.18
+This has only been tested on GnuCash V 2.6.17/2.6.18 and jGnash 2.33.3, with the testing primarily consisting
+of converting my personal GnuCash database into jGnash and verifying the account balances and scheduled transactions.
 
-By fairly simple I mean it handles the features of GnuCash that I had used, which is basically the personal accounting features.
+By fairly simple I mean it handles the features of GnuCash that I had used, which are basically the personal accounting features.
 Stuff I consider fancy such as multiple currencies, or business accounts such as accounts receivable/payable are not supported.
+I also did not use money market accounts.
+
+**REMEMBER**
+Make sure you:
+    - **Are aware that you are using this at your own risk!**
+    - Verify the balances in the jGnash accounts against your GnuCash accounts!
+    - Verify any scheduled transactions!
+    - Read the following notes!
+
 
 Some of the items to note (most of this is based upon information in the GnuCash document
 https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc, and might not have a direct feature in GnuCash):
@@ -26,7 +33,7 @@ https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc
 	 	- Root
 	 	- Checking
 	 	- Savings (converted to jGnash Checking)
-	 	- Moneymrkt
+	 	- Moneymrkt (this has not been tested)
 
 - Stocks:
     - Stocks are imported based upon the stock symbol, such as AAPL (cmdty:id in the XML file), the Type (NASDAQ, NYSE, etc.)
@@ -53,8 +60,20 @@ https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc
 	   the other account is an income account. The transaction is entered as two transactions:
         - A dividend transaction recording the income in the income account and the cash addition to the investment account.
         - A buy transaction recording the purchase of the shares from the investment account.
+        
+- Scheduled transactions:
+    - Only fairly simple scheduled transactions are supported. Only one template transaction is supported (may change to a new scheduled transaction
+    is created for each template transaction)
+    - Semi-monthly transactions are converted to two separate transactions.
+    - Reinvested dividends are not supported (they require 2 transactions, but the jGnash Reminder class only supports 1).
+    - End of month? 
+    - The last date is not transferred, so make sure your GnuCash database is up to date before transferring.
+    - Reminders are only generated for scheduled transactions that have a template transaction.
+    - The 'except on weekends' setting is currently ignored, for the end of month it's always set to the last valid day of
+    the month.
 
 - Budgets are not supported.
+
 
 # Project Development Notes:
 Here are my notes on creating a new plugin for jGnash that can be developed and debugged from Eclipse.

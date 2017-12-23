@@ -16,6 +16,8 @@
 */
 package gnucashjgnash.imports;
 
+import java.math.BigInteger;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +27,15 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractSimpleDataSet
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractVersionStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
+import jgnash.engine.Account;
+import jgnash.engine.Engine;
+import jgnash.engine.Transaction;
+import jgnash.engine.recurring.DailyReminder;
+import jgnash.engine.recurring.MonthlyReminder;
+import jgnash.engine.recurring.OneTimeReminder;
+import jgnash.engine.recurring.RecurringIterator;
+import jgnash.engine.recurring.Reminder;
+import jgnash.engine.recurring.WeeklyReminder;
 
 /**
  * @author albert
@@ -211,6 +222,10 @@ public class ScheduledTransactionEntry {
 		protected void endState() {
 			super.endState();
 			
+			if (!this.scheduledTransactionEntry.validateParse(this, "gnc:schedxaction")) {
+				return;
+			}
+			
 			this.contentHandler.addScheduledTransactionEntry(this.scheduledTransactionEntry);
 		}
 		
@@ -228,4 +243,253 @@ public class ScheduledTransactionEntry {
         		ScheduledTransactionStateHandler stateHandler);
     }
  
+    
+    
+    public static boolean processTemplateTransactions(GnuCashToJGnashContentHandler contentHandler, Engine engine) {
+    	// Each transaction...
+    	for (Map.Entry<String, TransactionImportEntry> entry : contentHandler.templateTransactionImportEntries.entrySet()) {
+    		TransactionImportEntry transactionEntry = entry.getValue();
+    		if (!processTemplateTransaction(transactionEntry, contentHandler, engine)) {
+    			return false;
+    		}
+    	}
+    	return true;
+    }
+    
+    protected static boolean processTemplateTransaction(TransactionImportEntry transactionEntry, 
+    		GnuCashToJGnashContentHandler contentHandler, Engine engine) {
+    	AccountImportEntry accountImportEntry = null;
+    	for (SplitEntry splitEntry : transactionEntry.originalSplitsList) {
+    		AccountImportEntry splitAccountImportEntry = contentHandler.templateAccountImportEntries.get(splitEntry.account.id);
+    		if (splitAccountImportEntry == null) {
+    			contentHandler.recordWarning("TemplateTransactionSplitAccountMissing", "Message.Warning.TemplateTransactionSplitAccountMissing", 
+    					splitEntry.id.id, splitEntry.account.id);
+    			return true;
+    		}
+    		else if (accountImportEntry != null) {
+    			if (splitAccountImportEntry != accountImportEntry) {
+    				contentHandler.recordWarning("TemplateTransactionSplitAccountsDifferent", "Message.Warning.TemplateTransactionSplitAccountsDifferent", 
+        					transactionEntry.id.id);
+    				return true;
+    			}
+    		}
+    		else {
+    			accountImportEntry = splitAccountImportEntry;
+    		}
+    	}
+    	if (accountImportEntry == null) {
+    		return true;
+    	}
+    	
+    	// OK, generate the transaction(s).
+    	TransactionImportEntry normalTransactionEntry = templateTransactionToNormal(transactionEntry, contentHandler);
+    	if (normalTransactionEntry == null) {
+    		return true;
+    	}
+    	
+    	if (!normalTransactionEntry.generateJGnashTransaction(contentHandler, accountImportEntry.jGnashTemplateTransactions)) {
+    		return false;
+    	}
+    	
+    	return true;
+    }
+    
+    
+    
+    public static TransactionImportEntry templateTransactionToNormal(TransactionImportEntry originalTransactionEntry,
+    		GnuCashToJGnashContentHandler contentHandler) {
+    	TransactionImportEntry normalTransactionEntry = new TransactionImportEntry();
+    	normalTransactionEntry.isTemplateTransaction = true;
+    	
+    	normalTransactionEntry.currencyRef = originalTransactionEntry.currencyRef;
+    	normalTransactionEntry.num = originalTransactionEntry.num;
+    	normalTransactionEntry.dateEntered = originalTransactionEntry.dateEntered;
+    	normalTransactionEntry.datePosted = originalTransactionEntry.datePosted;
+    	normalTransactionEntry.description = originalTransactionEntry.description;
+    	normalTransactionEntry.slots = originalTransactionEntry.slots;
+    	
+    	for (SplitEntry originalSplitEntry : originalTransactionEntry.originalSplitsList) {
+    		SplitEntry normalSplitEntry = new SplitEntry();
+    		normalSplitEntry.memo = originalSplitEntry.memo;
+    		normalSplitEntry.reconciledState = originalSplitEntry.reconciledState;
+    		normalSplitEntry.value = originalSplitEntry.value;
+    		normalSplitEntry.quantity = originalSplitEntry.quantity;
+    		
+    		if (!templateSplitEntrySlotsToNormal(originalSplitEntry, normalSplitEntry, contentHandler)) {
+    			return null;
+    		}
+    		
+    		normalTransactionEntry.originalSplitsList.add(normalSplitEntry);
+    	}
+    	
+    	return normalTransactionEntry;
+    }
+    
+    
+    protected static boolean templateSplitEntrySlotsToNormal(SplitEntry originalSplitEntry, SplitEntry normalSplitEntry,
+    		GnuCashToJGnashContentHandler contentHandler) {
+    	SlotEntry slotEntry = originalSplitEntry.slots.get("sched-xaction");
+    	if (slotEntry == null) {
+    		contentHandler.recordWarning("SchedXActionSlotMissing", "Message.Warning.SchedXActionSlotMissing", originalSplitEntry.id.id);
+    		return false;
+    	}
+    	if (slotEntry.frameSlotEntries == null) {
+    		contentHandler.recordWarning("SchedXActionSlotNotFrame", "Message.Warning.SchedXActionSlotNotFrame", originalSplitEntry.id.id);
+    		return false;
+    	}
+    	SlotEntry accountSlotEntry = slotEntry.frameSlotEntries.get("account");
+    	if (accountSlotEntry == null) {
+    		contentHandler.recordWarning("SchedXActionSlotMissingAccount", "Message.Warning.SchedXActionSlotMissingAccount", originalSplitEntry.id.id);
+    		return false;
+    	}
+    	
+    	normalSplitEntry.account.id = accountSlotEntry.value;
+    	
+    	SlotEntry creditFormulaSlotEntry = slotEntry.frameSlotEntries.get("credit-formula");
+    	SlotEntry debitFormulaSlotEntry = slotEntry.frameSlotEntries.get("debit-formula");
+    	
+    	if ((creditFormulaSlotEntry != null) && !creditFormulaSlotEntry.value.isEmpty()) {
+    		try {
+    			normalSplitEntry.value.fromRealString(creditFormulaSlotEntry.value, BigInteger.valueOf(1000));
+    			normalSplitEntry.value.numerator = normalSplitEntry.value.numerator.negate(); 
+    		}
+    		catch (NumberFormatException e) {
+        		contentHandler.recordWarning("SchedXActionSlotCreditFormulaValueInvalid", "Message.Warning.SchedXActionSlotCreditFormulaValueInvalid", 
+        				originalSplitEntry.id.id, e.getLocalizedMessage());
+    			return false;
+    		}
+    	}
+    	else if ((debitFormulaSlotEntry != null) && !debitFormulaSlotEntry.value.isEmpty()) {
+    		try {
+    			normalSplitEntry.value.fromRealString(debitFormulaSlotEntry.value, BigInteger.valueOf(1000));
+    		}
+    		catch (NumberFormatException e) {
+        		contentHandler.recordWarning("SchedXActionSlotDebitFormulaValueInvalid", "Message.Warning.SchedXActionSlotDebitFormulaValueInvalid", 
+        				originalSplitEntry.id.id, e.getLocalizedMessage());
+    			return false;
+    		}
+    	}
+    	else {
+    	}
+    	
+    	normalSplitEntry.quantity.fromRealString("1", BigInteger.ONE);
+
+    	return true;
+    }
+    
+    
+    public boolean generateJGnashScheduledTransaction(GnuCashToJGnashContentHandler contentHandler, Engine engine) {
+    	AccountImportEntry templateAccount = contentHandler.templateAccountImportEntries.get(this.templateAccount.id);
+    	if (templateAccount == null) {
+    		contentHandler.recordWarning("TemplateAccountMissing", "Message.Warning.TemplateAccountMissing", this.name, this.templateAccount.id);
+    		return true;
+    	}
+    	
+    	String recurrenceSuffix = "";
+    	int recurrenceIndex = 0;
+    	for (RecurrenceEntry recurrenceEntry : this.recurrances) {
+    		if (recurrenceIndex > 0) {
+    			recurrenceSuffix = "_" + (recurrenceIndex + 1);
+    		}
+    		for (Transaction jGnashTemplateTransaction : templateAccount.jGnashTemplateTransactions) {
+	    		if (!generateJGnashReminder(recurrenceEntry, recurrenceSuffix, jGnashTemplateTransaction, templateAccount, contentHandler, engine)) {
+	    			return false;
+	    		}
+    		}
+    		++recurrenceIndex;
+    	}
+    	
+    	return true;
+    }
+    
+    protected boolean generateJGnashReminder(RecurrenceEntry recurrenceEntry, String recurrenceSuffix, Transaction jGnashTemplateTransaction,
+    		AccountImportEntry templateAccount, GnuCashToJGnashContentHandler contentHandler, Engine engine) {
+    	
+    	Account jGnashAccount = jGnashTemplateTransaction.getAccounts().iterator().next();
+    	MonthlyReminder monthlyReminder;
+    	Reminder jGnashReminder = null;
+    	int increment = recurrenceEntry.mult.value;
+    	LocalDate startDate = (recurrenceEntry.start.isParsed) ? recurrenceEntry.start.localDate : this.start.localDate;
+    	LocalDate endDate = (this.end.isParsed) ? this.end.localDate : null;
+    	GDateEntry lastDate = this.last;
+    	
+    	switch (recurrenceEntry.periodType) {
+    	case "once" :
+    		jGnashReminder = new OneTimeReminder();
+    		break;
+    		
+    	case "day" :
+    		jGnashReminder = new DailyReminder();
+    		break;
+    		
+    	case "week" :
+    		jGnashReminder = new WeeklyReminder();
+    		break;
+    		
+    	case "month" :
+    		jGnashReminder = new MonthlyReminder();
+    		break;
+    		
+    	case "end of month" :
+    		jGnashReminder = new MonthlyReminder();
+    		break;
+    		
+    	case "nth weekday" :
+    		//jGnashReminder = new WeeklyReminder();
+    		break;
+    		
+    	case "last weekday" :
+    		monthlyReminder = new MonthlyReminder();
+    		monthlyReminder.setType(1);
+    		jGnashReminder = monthlyReminder;
+    		break;
+    		
+    	case "year" :
+    		jGnashReminder = new MonthlyReminder();
+    		increment = 12;
+    		break;
+    	}
+    	
+    	if (jGnashReminder == null) {
+    		contentHandler.recordWarning("UnsupportedRecurrencePeriod", "Message.Warning.UnsupportedRecurrencePeriod", 
+    				this.name, recurrenceEntry.periodType);
+    		return true;
+    	}
+    	
+   		jGnashReminder.setIncrement(increment);
+    	
+    	jGnashReminder.setDaysAdvance(this.advanceCreateDays.value);
+    	jGnashReminder.setAutoCreate(this.autoCreate.value);
+    	jGnashReminder.setDescription(this.name + recurrenceSuffix);
+    	jGnashReminder.setEnabled(this.enabled.value);
+    	jGnashReminder.setStartDate(startDate);
+    	if (endDate != null) {
+    		jGnashReminder.setEndDate(endDate);
+    	}
+    	
+    	if (lastDate.isParsed) {
+    		RecurringIterator iterator = jGnashReminder.getIterator();
+    		int advanceCount = 0;
+    		LocalDate nextDate = iterator.next();
+    		while (nextDate != null) {
+    			if (nextDate.isAfter(lastDate.localDate)) {
+    				break;
+    			}
+    			
+    			++advanceCount;
+    			nextDate = iterator.next();
+    		}
+    		
+    		while (--advanceCount >= 0) {
+    			jGnashReminder.setLastDate();
+    		}
+    	}
+    	
+    	jGnashReminder.setAccount(jGnashAccount);
+    	jGnashReminder.setTransaction(jGnashTemplateTransaction);
+    	
+    	engine.addReminder(jGnashReminder);
+    	
+    	return true;
+    }
 }

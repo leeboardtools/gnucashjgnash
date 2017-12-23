@@ -187,9 +187,13 @@ public class GnuCashImport {
     protected boolean importGnuCashXML(final InputStream inputStream, final String gnuCashFileName, final String jGnashFileName,
                                        final Engine engine, final StatusCallback statusCallback) {
         Logger jGnashEngineLogger = Logger.getLogger("jgnash.engine.Engine");
-        Logger jGnashTransactionFactoryLogger = Logger.getLogger("jgnash.engine.TransactionFactory");
         Level savedEngineLoggingLevel = (jGnashEngineLogger != null) ? jGnashEngineLogger.getLevel() : Level.ALL;
+
+        Logger jGnashTransactionFactoryLogger = Logger.getLogger("jgnash.engine.TransactionFactory");
         Level savedTransactionFactoryLoggingLevel = (jGnashTransactionFactoryLogger != null) ? jGnashTransactionFactoryLogger.getLevel() : Level.ALL;
+
+        Logger jGnashBinaryContainerLogger = Logger.getLogger("jgnash.engine.xstream.BinaryContainer");
+        Level savedBinaryContainerLoggingLevel = (jGnashBinaryContainerLogger != null) ? jGnashBinaryContainerLogger.getLevel() : Level.ALL;
         try {
             // TEST!!!
             if (jGnashEngineLogger != null) {
@@ -197,6 +201,9 @@ public class GnuCashImport {
             }
             if (jGnashTransactionFactoryLogger != null) {
                 jGnashTransactionFactoryLogger.setLevel(Level.WARNING);
+            }
+            if (jGnashBinaryContainerLogger != null) {
+            	jGnashBinaryContainerLogger.setLevel(Level.WARNING);
             }
             
             if (statusCallback != null) {
@@ -250,6 +257,9 @@ public class GnuCashImport {
             }
             if (jGnashTransactionFactoryLogger != null) {
                 jGnashTransactionFactoryLogger.setLevel(savedTransactionFactoryLoggingLevel);
+            }
+            if (jGnashBinaryContainerLogger != null) {
+            	jGnashBinaryContainerLogger.setLevel(savedBinaryContainerLoggingLevel);
             }
         }
 

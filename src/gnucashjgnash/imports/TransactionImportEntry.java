@@ -55,6 +55,8 @@ public class TransactionImportEntry {
     Map<String, SplitEntry> splits = new HashMap<>();
     List<SplitEntry> originalSplitsList = new ArrayList<>();
     
+    boolean isTemplateTransaction = false;
+    
     
     public static class TransactionStateHandler extends AbstractVersionStateHandler {
         TransactionImportEntry transactionEntry = new TransactionImportEntry();
@@ -164,12 +166,32 @@ public class TransactionImportEntry {
 
     
     /**
-     * The main entry point for generating the jGnash transaction.
+     * The main entry point for generating the jGnash transactions, this one adds them to the jGnash engine.
      * @param contentHandler
      * @param engine
      * @return
      */
     public boolean generateJGnashTransaction(GnuCashToJGnashContentHandler contentHandler, Engine engine) {
+    	ArrayList<Transaction> jGnashTransactions = new ArrayList<>();
+    	if (!generateJGnashTransaction(contentHandler, jGnashTransactions)) {
+    		return false;
+    	}
+    	
+    	for (Transaction jGnashTransaction : jGnashTransactions) {
+    		engine.addTransaction(jGnashTransaction);
+    	}
+    	
+    	return true;
+    }
+    
+
+    /**
+     * The main entry point for generating the jGnash transactions.
+     * @param contentHandler
+     * @param jGnashTransactions
+     * @return
+     */
+    public boolean generateJGnashTransaction(GnuCashToJGnashContentHandler contentHandler, List<Transaction> jGnashTransactions) {
         for (SplitEntry splitEntry : this.originalSplitsList) {
             if (!splitEntry.validateForJGnash(contentHandler)) {
                 return true;
@@ -182,7 +204,7 @@ public class TransactionImportEntry {
         // Handle special splits...
         for (SplitEntry splitEntry : this.originalSplitsList) {
             if ("Split".equals(splitEntry.action)) {
-                if (!handleSecuritySplitSplit(splitEntry, contentHandler, engine)) {
+                if (!handleSecuritySplitSplit(splitEntry, contentHandler, jGnashTransactions)) {
                     return false;
                 }
                 memo = null;
@@ -205,13 +227,13 @@ public class TransactionImportEntry {
         }
         
         if (!investmentSplitEntries.isEmpty()) {
-            return handleJGnashInvestmentTransaction(splitsList, investmentSplitEntries, contentHandler, engine);
+            return handleJGnashInvestmentTransaction(splitsList, investmentSplitEntries, contentHandler, jGnashTransactions);
         }
         else if (splitsList.size() == 1) {
             SplitEntry splitEntry = splitsList.get(0);
             Transaction transaction = TransactionFactory.generateSingleEntryTransaction(splitEntry.jGnashAccount,
                     splitEntry.value.toBigDecimal(), this.datePosted.localDate, null, this.description, this.num);
-            engine.addTransaction(transaction);
+            jGnashTransactions.add(transaction);
             return true;
         }
         
@@ -231,12 +253,13 @@ public class TransactionImportEntry {
             return false;
         }
         
-        engine.addTransaction(transaction);
-        return true;
+        jGnashTransactions.add(transaction);
+    	return true;
     }
     
 
-    protected boolean handleSecuritySplitSplit(SplitEntry splitEntry, GnuCashToJGnashContentHandler contentHandler, Engine engine) {
+    protected boolean handleSecuritySplitSplit(SplitEntry splitEntry, GnuCashToJGnashContentHandler contentHandler, 
+    		List<Transaction> jGnashTransactions) {
         SecurityNode securityNode = splitEntry.jGnashSecurity;
         Account account = splitEntry.jGnashAccount;
         BigDecimal value = splitEntry.value.toBigDecimal();
@@ -258,13 +281,13 @@ public class TransactionImportEntry {
                     value, quantity, this.datePosted.localDate, this.description);
         }
         
-        engine.addTransaction(transaction);
+        jGnashTransactions.add(transaction);
         return true;
     }
     
     
     protected boolean handleJGnashInvestmentTransaction(List<SplitEntry> splitsList, List<SplitEntry> investmentSplitEntries, 
-            GnuCashToJGnashContentHandler contentHandler, Engine engine) {
+            GnuCashToJGnashContentHandler contentHandler, List<Transaction> jGnashTransactions) {
         InvestmentTransaction transaction = null;
         
         if (investmentSplitEntries.size() == 1) {
@@ -373,7 +396,7 @@ public class TransactionImportEntry {
                         BigDecimal amount = securitySplitEntry.value.toBigDecimal();
                         transaction = TransactionFactory.generateDividendXTransaction(account, investmentAccount, investmentAccount, 
                                 securityNode, amount, amount.negate(), BigDecimal.ZERO, this.datePosted.localDate, this.description);
-                        engine.addTransaction(transaction);
+                        jGnashTransactions.add(transaction);
                         
                         // The dividend is now in the investment account, we're buying from there...
                         account = investmentAccount;
@@ -382,7 +405,7 @@ public class TransactionImportEntry {
                     transaction = TransactionFactory.generateBuyXTransaction(account, investmentAccount, securityNode, price, quantity, exchangeRate, 
                             this.datePosted.localDate, this.description, fees);
                 }
-                engine.addTransaction(transaction);
+                jGnashTransactions.add(transaction);
                 return true;
             }
         }
@@ -403,14 +426,14 @@ public class TransactionImportEntry {
                         BigDecimal quantity = quantityA.add(quantityB);
                         transaction = TransactionFactory.generateSplitXTransaction(account, splitEntryA.jGnashSecurity,
                                 BigDecimal.ONE, quantity, this.datePosted.localDate, this.description);
-                        engine.addTransaction(transaction);
+                        jGnashTransactions.add(transaction);
                         return true;
                     }
                 }
             }
         }
         
-           recordSkippingTransaction(splitsList, contentHandler, null, "Message.Warning.UnsupportedInvestmentTransaction");
+        recordSkippingTransaction(splitsList, contentHandler, null, "Message.Warning.UnsupportedInvestmentTransaction");
         return false;
     }
     
@@ -452,6 +475,7 @@ public class TransactionImportEntry {
     final static SplitEntry assignEntryIfNull(SplitEntry refEntry, SplitEntry newEntry) {
         return (refEntry == null) ? newEntry : refEntry;
     }
+    
     
     protected boolean generateJGnashSplitTransactionEntries(List<SplitEntry> splitsList, 
             GnuCashToJGnashContentHandler contentHandler, Transaction transaction) {

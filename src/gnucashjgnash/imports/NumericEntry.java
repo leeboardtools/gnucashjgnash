@@ -24,6 +24,14 @@ public class NumericEntry {
     BigInteger numerator = null;
     BigInteger denominator = null;
     int scale;
+    
+    
+    public void fromRealString(String valueText, BigInteger denominator) {
+    	float value = Float.parseFloat(valueText) * denominator.floatValue();
+    	this.numerator = BigInteger.valueOf(Math.round(value));
+    	this.denominator = denominator;
+    }
+    
 
     public static class NumericStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
         final NumericEntry numericEntry;

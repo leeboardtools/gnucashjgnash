@@ -18,8 +18,10 @@ package gnucashjgnash.imports;
 
 import jgnash.engine.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -41,6 +43,10 @@ class AccountImportEntry {
     Map<String, SlotEntry> slots = new HashMap<>();
 
     Map<String, AccountImportEntry> childAccountEntries = new HashMap<>();
+    
+    List<Transaction> jGnashTemplateTransactions = new ArrayList<>();
+    
+    
 
     // Not yet supported:
     // commodity-scu
