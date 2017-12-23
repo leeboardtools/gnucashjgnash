@@ -1,4 +1,4 @@
-This is a jGnash plugin for a **Fairly Simple** Gnucash database into an equivalent jGnash database.
+This is a jGnash (https://sourceforge.net/projects/jgnash/) plugin for a **Fairly Simple** Gnucash (http://gnucash.org/) database into an equivalent jGnash database.
 
 This has only been tested on GnuCash V 2.6.17/2.6.18 and jGnash 2.33.3, with the testing primarily consisting
 of converting my personal GnuCash database into jGnash and verifying the account balances and scheduled transactions.
