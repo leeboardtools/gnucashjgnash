@@ -21,6 +21,7 @@ import jgnash.engine.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import gnucashjgnash.GnuCashConvertUtil;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 
@@ -31,7 +32,7 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
  * @author albert
  *
  */
-public class CommodityEntry {
+public class CommodityEntry extends ParsedEntry {
     String space;
     String id;
     String name;
@@ -48,13 +49,44 @@ public class CommodityEntry {
 
     Map<String, SlotEntry> slots = new HashMap<>();
 
+    
+    public CommodityEntry(GnuCashToJGnashContentHandler contentHandler) {
+    	super(contentHandler);
+    }
+    
+    
 
-    static class CommodityStateHandler extends GnuCashToJGnashContentHandler.AbstractVersionStateHandler {
-        final CommodityEntry commodityEntry = new CommodityEntry();
+    /* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+		if (this.isCurrency) {
+			return GnuCashConvertUtil.getString("Message.ParsedEntry.CurrencyEntry", this.id);
+		}
+		else {
+			return GnuCashConvertUtil.getString("Message.ParsedEntry.SecurityEntry", this.id);
+			
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getUniqueId()
+	 */
+	@Override
+	public String getUniqueId() {
+		return this.id;
+	}
+
+
+
+	static class CommodityStateHandler extends GnuCashToJGnashContentHandler.AbstractVersionStateHandler {
+        final CommodityEntry commodityEntry;
 
         CommodityStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler, 
                               String elementName) {
             super(contentHandler, parentStateHandler, elementName);
+            this.commodityEntry = new CommodityEntry(contentHandler);
         }
 
         @Override
@@ -137,7 +169,7 @@ public class CommodityEntry {
                     });
 
             case "cmdty:slots" : 
-                return new SlotEntry.SlotsStateHandler(this.commodityEntry.slots, this.contentHandler, this, qName);
+                return new SlotEntry.SlotsStateHandler(this.commodityEntry.slots, this.commodityEntry, this.contentHandler, this, qName);
 
             }
             return super.getStateHandlerForElement(qName);
@@ -208,6 +240,10 @@ public class CommodityEntry {
                 return false;
             }
             return true;
+        }
+        
+        boolean isParsed() {
+        	return (this.space != null) && (this.id != null);
         }
     }
 

@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import gnucashjgnash.GnuCashConvertUtil;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractSimpleDataSetter;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractVersionStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
@@ -42,32 +43,80 @@ import jgnash.engine.recurring.WeeklyReminder;
  * @author albert
  *
  */
-public class ScheduledTransactionEntry {
-	IdEntry id = new IdEntry();
+public class ScheduledTransactionEntry extends ParsedEntry {
+	IdEntry id = new IdEntry(this);
 	String name;
-	YesNoEntry enabled = new YesNoEntry();
-	YesNoEntry autoCreate = new YesNoEntry();
-	YesNoEntry autoCreateNotify = new YesNoEntry();
-	IntEntry advanceCreateDays = new IntEntry();
-	IntEntry advanceRemindDays = new IntEntry();
-	IntEntry instanceCount = new IntEntry();
-	GDateEntry start = new GDateEntry();
-	GDateEntry last = new GDateEntry();	// Optional
+	YesNoEntry enabled = new YesNoEntry(this);
+	YesNoEntry autoCreate = new YesNoEntry(this);
+	YesNoEntry autoCreateNotify = new YesNoEntry(this);
+	IntEntry advanceCreateDays = new IntEntry(this);
+	IntEntry advanceRemindDays = new IntEntry(this);
+	IntEntry instanceCount = new IntEntry(this);
+	GDateEntry start = new GDateEntry(this);
+	GDateEntry last = new GDateEntry(this);	// Optional
 	
-	IntEntry numOccur = new IntEntry();
-	IntEntry remOccur = new IntEntry();
-	GDateEntry end = new GDateEntry();	// Optional
+	IntEntry numOccur = new IntEntry(this);
+	IntEntry remOccur = new IntEntry(this);
+	GDateEntry end = new GDateEntry(this);	// Optional
 	
-	IdEntry templateAccount = new IdEntry();
+	IdEntry templateAccount = new IdEntry(this);
 	
 	List<RecurrenceEntry> recurrances = new ArrayList<>();
 	List<DeferredInstanceEntry> deferredInstances = new ArrayList<>();
 	
 	Map<String, SlotEntry> slots = new HashMap<>();
+
+
+    static ParsedEntry rootParsedParentEntry = new ParsedEntry(null) {
+
+		@Override
+		public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+			return GnuCashConvertUtil.getString("Message.ParsedEntry.RootScheduledTransactionEntryParent");
+		}
+    	
+    };
 	
 	
+	/**
+	 * @param contentHandler
+	 */
+	protected ScheduledTransactionEntry(GnuCashToJGnashContentHandler contentHandler) {
+		super(contentHandler);
+	}
+
+
 	
-    public boolean validateParse(StateHandler stateHandler, String qName) {
+    /* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getParentParsedEntry(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public ParsedEntry getParentParsedEntry(GnuCashToJGnashContentHandler contentHandler) {
+		return rootParsedParentEntry;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+		return this.name;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getUniqueId()
+	 */
+	@Override
+	public String getUniqueId() {
+		return this.id.id;
+	}
+
+
+
+	public boolean validateParse(StateHandler stateHandler, String qName) {
     	if (!this.id.validateGUIDParse(stateHandler, "sx:id")) {
     		return false;
     	}
@@ -126,11 +175,12 @@ public class ScheduledTransactionEntry {
 
     
 	static class ScheduledTransactionStateHandler extends AbstractVersionStateHandler {
-		final ScheduledTransactionEntry scheduledTransactionEntry = new ScheduledTransactionEntry();
+		final ScheduledTransactionEntry scheduledTransactionEntry;
 
 		ScheduledTransactionStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
 				String elementName) {
 			super(contentHandler, parentStateHandler, elementName);
+			this.scheduledTransactionEntry = new ScheduledTransactionEntry(contentHandler);
 		}
 
 		/* (non-Javadoc)
@@ -200,15 +250,17 @@ public class ScheduledTransactionEntry {
 				return new IdEntry.IdStateHandler(this.scheduledTransactionEntry.templateAccount, this.contentHandler, this, qName);
 				
 			case "sx:schedule":
-				return new RecurrenceEntry.RecurrencesStateHandler(this.scheduledTransactionEntry.recurrances, this.contentHandler, this, qName);
+				return new RecurrenceEntry.RecurrencesStateHandler(this.scheduledTransactionEntry.recurrances, this.scheduledTransactionEntry, 
+						this.contentHandler, this, qName);
 
 			case "sx:deferredInstance":
-				DeferredInstanceEntry deferredInstanceEntry = new DeferredInstanceEntry();
+				DeferredInstanceEntry deferredInstanceEntry = new DeferredInstanceEntry(this.contentHandler, this.scheduledTransactionEntry);
 				this.scheduledTransactionEntry.deferredInstances.add(deferredInstanceEntry);
 				return new DeferredInstanceEntry.DeferredInstanceStateHandler(deferredInstanceEntry, this.contentHandler, this, qName);
 				
 			case "sx:slots":
-                return new SlotEntry.SlotsStateHandler(this.scheduledTransactionEntry.slots, this.contentHandler, this, qName);
+                return new SlotEntry.SlotsStateHandler(this.scheduledTransactionEntry.slots, this.scheduledTransactionEntry, 
+                		this.contentHandler, this, qName);
 				
 			}
 
@@ -311,7 +363,9 @@ public class ScheduledTransactionEntry {
      */
     public static TransactionImportEntry templateTransactionToNormal(TransactionImportEntry originalTransactionEntry,
     		GnuCashToJGnashContentHandler contentHandler) {
-    	TransactionImportEntry normalTransactionEntry = new TransactionImportEntry();
+    	TransactionImportEntry normalTransactionEntry = new TransactionImportEntry(null);
+    	normalTransactionEntry.lineNumber = originalTransactionEntry.lineNumber;
+    	normalTransactionEntry.columnNumber = originalTransactionEntry.columnNumber;
     	normalTransactionEntry.isTemplateTransaction = true;
     	
     	normalTransactionEntry.currencyRef = originalTransactionEntry.currencyRef;
@@ -322,7 +376,9 @@ public class ScheduledTransactionEntry {
     	normalTransactionEntry.slots = originalTransactionEntry.slots;
     	
     	for (SplitEntry originalSplitEntry : originalTransactionEntry.originalSplitsList) {
-    		SplitEntry normalSplitEntry = new SplitEntry();
+    		SplitEntry normalSplitEntry = new SplitEntry(contentHandler, normalTransactionEntry);
+    		normalSplitEntry.columnNumber = originalSplitEntry.columnNumber;
+    		normalSplitEntry.lineNumber = originalSplitEntry.lineNumber;
     		normalSplitEntry.memo = originalSplitEntry.memo;
     		normalSplitEntry.reconciledState = originalSplitEntry.reconciledState;
     		normalSplitEntry.value = originalSplitEntry.value;

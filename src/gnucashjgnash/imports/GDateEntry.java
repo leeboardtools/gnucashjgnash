@@ -28,11 +28,32 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
  * @author albert
  *
  */
-public class GDateEntry {
-    LocalDate localDate = LocalDate.now();
+public class GDateEntry extends ParsedEntry {
+	LocalDate localDate = LocalDate.now();
     boolean isParsed = false;
     String parseError;
     
+    /**
+	 * @param contentHandler
+	 */
+	protected GDateEntry(ParsedEntry parentParsedEntry) {
+		super(null);
+		this.parentEntry = parentParsedEntry;
+	}
+
+
+    /* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+		return null;
+	}
+
+
+	public boolean isParsed() {
+    	return this.isParsed;
+    }
     
     public boolean validateParse(StateHandler stateHandler, String qName) {
     	if (this.parseError != null) {
@@ -51,6 +72,7 @@ public class GDateEntry {
                 String elementName) {
             super(contentHandler, parentStateHandler, elementName);
             this.gDateEntry = gDateEntry;
+            gDateEntry.updateLocatorInfo(contentHandler);
         }
         
         

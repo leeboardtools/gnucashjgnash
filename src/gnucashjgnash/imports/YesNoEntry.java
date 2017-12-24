@@ -24,12 +24,30 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
  * @author albert
  *
  */
-public class YesNoEntry {
+public class YesNoEntry extends ParsedEntry {
 	boolean value;
 	String parseError;
 	boolean wasParsed;
 	
 	
+	/**
+	 * @param contentHandler
+	 */
+	protected YesNoEntry(ParsedEntry parentParsedEntry) {
+		super(null);
+		this.parentEntry = parentParsedEntry;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+		return null;
+	}
+
+
 	public boolean validateParse(StateHandler stateHandler, String qName) {
 		if (this.parseError != null) {
 			stateHandler.recordWarning("YesNoValueInvalid_" + qName, "Message.Parse.XMLYesNoInvalid", qName);
@@ -47,6 +65,7 @@ public class YesNoEntry {
 				String elementName) {
 			super(contentHandler, parentStateHandler, elementName);
 			this.yesNoEntry = yesNoEntry;
+			this.yesNoEntry.updateLocatorInfo(contentHandler);
 		}
 
 		/* (non-Javadoc)

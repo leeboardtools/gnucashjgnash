@@ -25,13 +25,32 @@ import java.math.RoundingMode;
  * @author albert
  *
  */
-public class NumericEntry {
-    BigInteger numerator = null;
+public class NumericEntry extends ParsedEntry {
+	BigInteger numerator = null;
     BigInteger denominator = null;
     int scale;
     
+    /**
+	 * @param contentHandler
+	 */
+	protected NumericEntry(ParsedEntry parentParsedEntry) {
+		super(null);
+		this.parentEntry = parentParsedEntry;
+	}
+
     
-    public void fromRealString(String valueText, BigInteger denominator) {
+    /* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+		return null;
+	}
+
+
+
+
+	public void fromRealString(String valueText, BigInteger denominator) {
     	float value = Float.parseFloat(valueText) * denominator.floatValue();
     	this.numerator = BigInteger.valueOf(Math.round(value));
     	this.denominator = denominator;
@@ -44,6 +63,7 @@ public class NumericEntry {
                           GnuCashToJGnashContentHandler.StateHandler parentStateHandler, String elementName) {
             super(contentHandler, parentStateHandler, elementName);
             this.numericEntry = numericEntry;
+            this.numericEntry.updateLocatorInfo(contentHandler);
         }
 
         @Override

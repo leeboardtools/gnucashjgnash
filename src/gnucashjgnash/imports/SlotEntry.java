@@ -29,8 +29,8 @@ import java.util.Map;
  * @author albert
  *
  */
-public class SlotEntry {
-    String key;
+public class SlotEntry extends ParsedEntry {
+	String key;
     String valueType;
     String value;
     TimeEntry timeEntryValue;
@@ -38,8 +38,24 @@ public class SlotEntry {
     NumericEntry numericValue;
     Map<String, SlotEntry> frameSlotEntries;
 
+	protected SlotEntry(GnuCashToJGnashContentHandler contentHandler, ParsedEntry parentParsedEntry) {
+		super(contentHandler);
+		this.parentEntry = parentParsedEntry;
+	}
 
-    public static String getStringSlotValue(final Map<String, SlotEntry> slotEntries, final String key, final String defValue) {
+
+    /* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+		return this.key;
+	}
+
+
+
+
+	public static String getStringSlotValue(final Map<String, SlotEntry> slotEntries, final String key, final String defValue) {
         final SlotEntry slotEntry = slotEntries.get(key);
         if (slotEntry == null) {
             return defValue;
@@ -58,10 +74,13 @@ public class SlotEntry {
      */
     static class SlotsStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
         final Map<String, SlotEntry> slotEntries;
-        SlotsStateHandler(Map<String, SlotEntry> slotEntries, GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
-                          String elementName) {
+        final ParsedEntry parentParsedEntry;
+        
+        SlotsStateHandler(Map<String, SlotEntry> slotEntries, ParsedEntry parentParsedEntry,
+        		GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler, String elementName) {
             super(contentHandler, parentStateHandler, elementName);
             this.slotEntries = slotEntries;
+            this.parentParsedEntry = parentParsedEntry;
         }
         
         /* (non-Javadoc)
@@ -71,7 +90,7 @@ public class SlotEntry {
         protected StateHandler getStateHandlerForElement(String qName) {
             switch (qName) {
             case "slot": 
-                return new SlotStateHandler(this.slotEntries, this.contentHandler, this, qName); 
+                return new SlotStateHandler(this.slotEntries, this.parentParsedEntry, this.contentHandler, this, qName); 
             }
             return super.getStateHandlerForElement(qName);
         }
@@ -87,12 +106,14 @@ public class SlotEntry {
      */
     static class SlotStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
         final Map<String, SlotEntry> slotEntries;
-        final SlotEntry slotEntry = new SlotEntry();
+        final SlotEntry slotEntry;
 
-        SlotStateHandler(Map<String, SlotEntry> slotEntries, GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
+        SlotStateHandler(Map<String, SlotEntry> slotEntries, ParsedEntry parentParsedEntry, 
+        		GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
                          String elementName) {
             super(contentHandler, parentStateHandler, elementName);
             this.slotEntries = slotEntries;
+            this.slotEntry = new SlotEntry(contentHandler, parentParsedEntry);
         }
 
         /* (non-Javadoc)
@@ -186,11 +207,11 @@ public class SlotEntry {
                     return new TimeEntry.TimeStateHandler(this.slotEntry.timeEntryValue, this.contentHandler, this, qName);
                     
                 case "gdate" :
-                    this.slotEntry.gDateEntryValue = new GDateEntry();
+                    this.slotEntry.gDateEntryValue = new GDateEntry(this.slotEntry);
                     return new GDateEntry.GDateStateHandler(this.slotEntry.gDateEntryValue, this.contentHandler, this, qName);
                     
                 case "numeric":
-                    this.slotEntry.numericValue = new NumericEntry();
+                    this.slotEntry.numericValue = new NumericEntry(this.slotEntry);
                     return new NumericEntry.NumericStateHandler(this.slotEntry.numericValue, this.contentHandler, this, qName);
                     
                     //case "list":
@@ -199,7 +220,7 @@ public class SlotEntry {
                         this.slotEntry.frameSlotEntries = new HashMap<>();
                     }
                     if ("slot".equals(qName)) {
-                        return new SlotStateHandler(this.slotEntry.frameSlotEntries, this.contentHandler, this, qName);
+                        return new SlotStateHandler(this.slotEntry.frameSlotEntries, this.slotEntry, this.contentHandler, this, qName);
                     }
                     break; 
             }

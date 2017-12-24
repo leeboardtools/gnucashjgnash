@@ -24,18 +24,36 @@ import org.xml.sax.Attributes;
  * @author albert
  *
  */
-public class IdEntry {
-    String type;
+public class IdEntry extends ParsedEntry {
+	String type;
     String id;
+    
+    /**
+	 * @param contentHandler
+	 */
+	protected IdEntry(ParsedEntry parentParsedEntry) {
+		super(null);
+		this.parentEntry = parentParsedEntry;
+	}
 
 
-    public static class IdStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
+    /* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+		return null;
+	}
+
+
+	public static class IdStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
         final IdEntry idEntry;
 
         IdStateHandler(final IdEntry idEntry, GnuCashToJGnashContentHandler contentHandler,
                        GnuCashToJGnashContentHandler.StateHandler parentStateHandler, String elementName) {
             super(contentHandler, parentStateHandler, elementName);
             this.idEntry = idEntry;
+            this.idEntry.updateLocatorInfo(contentHandler);
         }
 
         @Override
@@ -49,6 +67,10 @@ public class IdEntry {
             super.handleStateAttributes(atts);
             this.idEntry.type = atts.getValue("type");
         }
+    }
+    
+    public boolean isParsed() {
+    	return (this.type != null) && (this.id != null);
     }
 
     boolean validateGUIDParse(GnuCashToJGnashContentHandler.StateHandler stateHandler, String qName) {

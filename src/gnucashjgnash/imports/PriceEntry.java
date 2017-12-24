@@ -22,6 +22,8 @@ import jgnash.engine.SecurityNode;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+
+import gnucashjgnash.GnuCashConvertUtil;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 
 /**
@@ -29,18 +31,74 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandle
  * @author albert
  *
  */
-public class PriceEntry {
-    IdEntry id = new IdEntry();
+public class PriceEntry extends ParsedEntry {
+	IdEntry id = new IdEntry(this);
     CommodityEntry.CommodityRef commodityRef = new CommodityEntry.CommodityRef();
     CommodityEntry.CurrencyRef currencyRef = new CommodityEntry.CurrencyRef();
     TimeEntry time = new TimeEntry();
     String source;
     String type;
-    NumericEntry value = new NumericEntry();
+    NumericEntry value = new NumericEntry(this);
+
+    static ParsedEntry orphanParsedParentEntry = new ParsedEntry(null) {
+
+		@Override
+		public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+			return GnuCashConvertUtil.getString("Message.ParsedEntry.OrphanedPriceEntryParent");
+		}
+    	
+    };
+
+    /**
+	 * @param contentHandler
+	 */
+	protected PriceEntry(GnuCashToJGnashContentHandler contentHandler) {
+		super(contentHandler);
+	}
+
+
+    /* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getParentParsedEntry(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public ParsedEntry getParentParsedEntry(GnuCashToJGnashContentHandler contentHandler) {
+		if (this.commodityRef.isParsed()) {
+			CommodityEntry commodityEntry = contentHandler.commodityEntries.get(this.commodityRef.id);
+			if (commodityEntry != null) {
+				return commodityEntry;
+			}
+		}
+		else if (this.currencyRef.isParsed()) {
+		}
+		return orphanParsedParentEntry;
+	}
 
 
 
-    public static class PriceDBStateHandler extends GnuCashToJGnashContentHandler.AbstractVersionStateHandler {
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+		if (time.isParsed()) {
+			return time.toString();
+		}
+		return null;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getUniqueId()
+	 */
+	@Override
+	public String getUniqueId() {
+		return this.id.id;
+	}
+
+
+
+	public static class PriceDBStateHandler extends GnuCashToJGnashContentHandler.AbstractVersionStateHandler {
 
         PriceDBStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
                             String elementName) {
@@ -68,11 +126,12 @@ public class PriceEntry {
 
 
     public static class PriceStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
-        final PriceEntry priceEntry = new PriceEntry();
+        final PriceEntry priceEntry;
 
         PriceStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
                           String elementName) {
             super(contentHandler, parentStateHandler, elementName);
+            this.priceEntry = new PriceEntry(contentHandler);
         }
 
         @Override

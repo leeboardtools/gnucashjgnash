@@ -16,6 +16,7 @@
 */
 package gnucashjgnash.imports;
 
+import gnucashjgnash.GnuCashConvertUtil;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 
@@ -24,13 +25,36 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
  * @author albert
  *
  */
-public class DeferredInstanceEntry {
-	GDateEntry last = new GDateEntry();
-	IntEntry remOccur = new IntEntry();
-	IntEntry instanceCount = new IntEntry();
+public class DeferredInstanceEntry extends ParsedEntry {
+	GDateEntry last = new GDateEntry(this);
+	IntEntry remOccur = new IntEntry(this);
+	IntEntry instanceCount = new IntEntry(this);
 
 	
-    public boolean validateParse(StateHandler stateHandler, String qName) {
+	/**
+	 * @param contentHandler
+	 */
+	protected DeferredInstanceEntry(GnuCashToJGnashContentHandler contentHandler, ParsedEntry parentParsedEntry) {
+		super(contentHandler);
+		this.parentEntry = parentParsedEntry;
+	}
+
+
+
+    /* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+		if (this.last.isParsed()) {
+			return GnuCashConvertUtil.getString("Message.ParsedEntry.DeferredInstanceEntry", this.last.localDate.toString());
+		}
+		return null;
+	}
+
+
+
+	public boolean validateParse(StateHandler stateHandler, String qName) {
     	if (!this.last.validateParse(stateHandler, "sx:last")) {
     		return false;
     	}
@@ -59,6 +83,7 @@ public class DeferredInstanceEntry {
 				String elementName) {
 			super(contentHandler, parentStateHandler, elementName);
 			this.deferredInstanceEntry = deferredInstanceEntry;
+			deferredInstanceEntry.updateLocatorInfo(contentHandler);
 		}
 
 		/* (non-Javadoc)

@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import gnucashjgnash.GnuCashConvertUtil;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractSimpleDataSetter;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractVersionStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
@@ -45,8 +46,9 @@ import jgnash.engine.TransactionTag;
  * @author albert
  *
  */
-public class TransactionImportEntry {
-    IdEntry id = new IdEntry();
+public class TransactionImportEntry extends ParsedEntry {
+
+	IdEntry id = new IdEntry(this);
     CommodityEntry.CurrencyRef currencyRef = new CommodityEntry.CurrencyRef();
     String num;
     TimeEntry datePosted = new TimeEntry();
@@ -57,10 +59,76 @@ public class TransactionImportEntry {
     List<SplitEntry> originalSplitsList = new ArrayList<>();
     
     boolean isTemplateTransaction = false;
+
+
+    static ParsedEntry orphanParsedParentEntry = new ParsedEntry(null) {
+
+		@Override
+		public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+			return GnuCashConvertUtil.getString("Message.ParsedEntry.OrphanedTransactionImportEntryParent");
+		}
+    	
+    };
     
+
+    /**
+	 * @param contentHandler
+	 */
+	protected TransactionImportEntry(GnuCashToJGnashContentHandler contentHandler) {
+		super(contentHandler);
+	}
+	
+	
     
-    public static class TransactionStateHandler extends AbstractVersionStateHandler {
-        TransactionImportEntry transactionEntry = new TransactionImportEntry();
+    /* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getParentParsedEntry(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public ParsedEntry getParentParsedEntry(GnuCashToJGnashContentHandler contentHandler) {
+		if (this.isTemplateTransaction) {
+			// TODO:
+		}
+		
+		for (SplitEntry splitEntry : this.originalSplitsList) {
+			if (splitEntry.account.isParsed()) {
+				AccountImportEntry accountImportEntry = contentHandler.accountImportEntries.get(splitEntry.account.id);
+				if (accountImportEntry != null) {
+					return accountImportEntry;
+				}
+			}
+		}
+		return orphanParsedParentEntry;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+		if (this.isTemplateTransaction) {
+			return this.description;
+		}
+		
+		if (this.datePosted.isParsed()) {
+			return this.datePosted.toDateString();
+		}
+		return null;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getUniqueId()
+	 */
+	@Override
+	public String getUniqueId() {
+		return this.id.id;
+	}
+
+
+
+	public static class TransactionStateHandler extends AbstractVersionStateHandler {
+        final TransactionImportEntry transactionEntry;
 
         /**
          * @param contentHandler
@@ -70,6 +138,7 @@ public class TransactionImportEntry {
         TransactionStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
                 String elementName) {
             super(contentHandler, parentStateHandler, elementName);
+            this.transactionEntry = new TransactionImportEntry(contentHandler);
         }
 
         /* (non-Javadoc)
@@ -119,10 +188,11 @@ public class TransactionImportEntry {
                     }); 
                 
             case "trn:slots":
-                return new SlotEntry.SlotsStateHandler(this.transactionEntry.slots, this.contentHandler, this, qName);
+                return new SlotEntry.SlotsStateHandler(this.transactionEntry.slots, this.transactionEntry, this.contentHandler, this, qName);
                 
             case "trn:splits":
-                return new SplitEntry.SplitsStateHandler(this.transactionEntry.splits, this.transactionEntry.originalSplitsList, "trn:split", this.contentHandler, this, qName);
+                return new SplitEntry.SplitsStateHandler(this.transactionEntry.splits, this.transactionEntry.originalSplitsList, "trn:split", 
+                		this.transactionEntry, this.contentHandler, this, qName);
             }
             return super.getStateHandlerForElement(qName);
         }

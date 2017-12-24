@@ -52,12 +52,14 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     int statusProgressCount;
     int statusProgressTotalCount;
     
+    Locator documentLocator;
+    
     final List<StateHandler> stateHandlers = new ArrayList<>();
     StateHandler activeStateHandler;
 
     final Map<String, Integer> countData = new HashMap<>();
     
-    final IdEntry bookId = new IdEntry();
+    final IdEntry bookId = new IdEntry(null);
     final Map<String, SlotEntry> bookSlots = new HashMap<>();
 
     final Map<String, CommodityEntry> commodityEntries = new HashMap<>();
@@ -122,6 +124,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
     @Override
     public void setDocumentLocator(Locator locator) {
+    	this.documentLocator = locator;
     }
 
     @Override
@@ -471,7 +474,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
                 return new IdEntry.IdStateHandler(this.contentHandler.bookId, this.contentHandler, this, qName);
                 
             case "book:slots" :
-                return new SlotEntry.SlotsStateHandler(this.contentHandler.bookSlots, this.contentHandler, this, qName);
+                return new SlotEntry.SlotsStateHandler(this.contentHandler.bookSlots, null, this.contentHandler, this, qName);
                 
             case "gnc:transaction" :
                 return new TransactionImportEntry.TransactionStateHandler(this.contentHandler, this, qName);

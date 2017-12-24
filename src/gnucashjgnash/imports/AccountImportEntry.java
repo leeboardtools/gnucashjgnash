@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
+import gnucashjgnash.GnuCashConvertUtil;
 import gnucashjgnash.imports.CommodityEntry.CommodityRef;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 
@@ -35,17 +36,17 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandle
  * @author albert
  *
  */
-public class AccountImportEntry {
+public class AccountImportEntry extends ParsedEntry {
     private static final Logger LOG = Logger.getLogger(AccountImportEntry.class.getName());
 
     String name;
-    IdEntry id = new IdEntry();
+    IdEntry id = new IdEntry(this);
     String type;
     CommodityRef commodityRef = new CommodityRef();
-    IntEntry commoditySCU = new IntEntry();
+    IntEntry commoditySCU = new IntEntry(this);
     String code;
     String description;
-    IdEntry parentId = new IdEntry();
+    IdEntry parentId = new IdEntry(this);
     Map<String, SlotEntry> slots = new HashMap<>();
 
     Map<String, AccountImportEntry> childAccountEntries = new HashMap<>();
@@ -53,12 +54,48 @@ public class AccountImportEntry {
     List<Transaction> jGnashTemplateTransactions = new ArrayList<>();
     
     
+    public AccountImportEntry(GnuCashToJGnashContentHandler contentHandler) {
+    	super(contentHandler);
+    }
+    
 
-    static class AccountStateHandler extends GnuCashToJGnashContentHandler.AbstractVersionStateHandler {
-        AccountImportEntry accountEntry = new AccountImportEntry();
+    /* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getParentParsedEntry(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public ParsedEntry getParentParsedEntry(GnuCashToJGnashContentHandler contentHandler) {
+		if (this.parentId.id != null) {
+			return contentHandler.accountImportEntries.get(this.parentId.id);
+		}
+		return null;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+		return GnuCashConvertUtil.getString("Message.ParsedEntry.AccountImportEntry", this.name);
+	}
+
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getGUID()
+	 */
+	@Override
+	public String getUniqueId() {
+		return this.id.id;
+	}
+
+
+
+	static class AccountStateHandler extends GnuCashToJGnashContentHandler.AbstractVersionStateHandler {
+        final AccountImportEntry accountEntry;
 
         AccountStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler, String elementName) {
             super(contentHandler, parentStateHandler, elementName);
+            this.accountEntry = new AccountImportEntry(contentHandler);
         }
 
         @Override
@@ -104,7 +141,7 @@ public class AccountImportEntry {
                     });
                 
             case "act:slots" :
-                return new SlotEntry.SlotsStateHandler(this.accountEntry.slots, this.contentHandler, this, qName);
+                return new SlotEntry.SlotsStateHandler(this.accountEntry.slots, this.accountEntry, this.contentHandler, this, qName);
                 
             case "act:parent" :
                 return new IdEntry.IdStateHandler(this.accountEntry.parentId, this.contentHandler, this, qName);
@@ -143,10 +180,6 @@ public class AccountImportEntry {
                 return;
             }
             if (this.accountEntry.commoditySCU.isParsed) {
-            	if (this.accountEntry.commoditySCU.value != 1) {
-            		recordWarning("AccountCommoditySCUNotSupported", "Message.Parse.XMLAccountCommoditySCUNotSUpported", this.accountEntry.name);
-            		return;
-            	}
             }
 
             this.contentHandler.addAccountEntry(this.accountEntry);

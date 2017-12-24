@@ -24,12 +24,30 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
  * @author albert
  *
  */
-public class IntEntry {
+public class IntEntry extends ParsedEntry {
 	int value;
 	String parseError;
 	boolean isParsed;
 	
 	
+	/**
+	 * @param contentHandler
+	 */
+	protected IntEntry(ParsedEntry parentParsedEntry) {
+		super(null);
+		this.parentEntry = parentParsedEntry;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+		return null;
+	}
+
+
 	public boolean validateParse(StateHandler stateHandler, String qName) {
 		if (this.parseError != null) {
 			stateHandler.recordWarning("IntValueInvalid_" + qName, "Message.Parse.XMLIntValueInvalid", qName);
@@ -46,6 +64,7 @@ public class IntEntry {
 				String elementName) {
 			super(contentHandler, parentStateHandler, elementName);
 			this.intEntry = intEntry;
+			this.intEntry.updateLocatorInfo(contentHandler);
 		}
 
 		/* (non-Javadoc)

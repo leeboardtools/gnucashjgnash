@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.xml.sax.Attributes;
 
+import gnucashjgnash.GnuCashConvertUtil;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 import jgnash.engine.Account;
@@ -36,16 +37,16 @@ import jgnash.engine.SecurityNode;
  * @author albert
  *
  */
-public class SplitEntry {
-    IdEntry id = new IdEntry();
+public class SplitEntry extends ParsedEntry {
+	IdEntry id = new IdEntry(this);
     String memo;
     String action;
     String reconciledState;
     TimeEntry reconcileDate = new TimeEntry();
-    NumericEntry value = new NumericEntry();
-    NumericEntry quantity = new NumericEntry();
-    IdEntry account = new IdEntry();
-    IdEntry lot = new IdEntry();
+    NumericEntry value = new NumericEntry(this);
+    NumericEntry quantity = new NumericEntry(this);
+    IdEntry account = new IdEntry(this);
+    IdEntry lot = new IdEntry(this);
     Map<String, SlotEntry> slots = new HashMap<>();
     
     Account jGnashAccount;
@@ -53,8 +54,47 @@ public class SplitEntry {
     
     SecurityNode jGnashSecurity;
     
-    
-    public boolean validateForJGnash(GnuCashToJGnashContentHandler contentHandler) {
+    /**
+	 * @param contentHandler
+	 */
+	protected SplitEntry(GnuCashToJGnashContentHandler contentHandler, TransactionImportEntry parentEntry) {
+		super(contentHandler);
+		this.parentEntry = parentEntry;
+	}
+	
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+		AccountImportEntry accountImportEntry = null;
+		if (this.account.isParsed()) {
+			accountImportEntry = contentHandler.accountImportEntries.get(this.account.id);
+			if (accountImportEntry != null) {
+				return GnuCashConvertUtil.getString("Message.ParsedEntry.SplitEntryAccount", accountImportEntry.name);
+			}
+		}
+		if ((this.memo != null) && !this.memo.isEmpty()) {
+			return GnuCashConvertUtil.getString("Message.ParsedEntry.SplitEntryMemo", this.memo);
+		}
+		
+		return this.memo;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getUniqueId()
+	 */
+	@Override
+	public String getUniqueId() {
+		return this.id.id;
+	}
+
+
+
+	public boolean validateForJGnash(GnuCashToJGnashContentHandler contentHandler) {
         this.jGnashAccount = contentHandler.jGnashAccounts.get(this.account.id);
         if (this.jGnashAccount == null) {
             this.jGnashSecurity = contentHandler.jGnashSecuritiesByStockAccountId.get(this.account.id);
@@ -109,13 +149,16 @@ public class SplitEntry {
         final Map<String, SplitEntry> splitEntries;
         final List<SplitEntry> splitEntriesList;
         final String splitElementName;
+        final TransactionImportEntry parentTransactionImportEntry;
         SplitsStateHandler(final Map<String, SplitEntry> splitEntries, final List<SplitEntry> splitEntriesList, final String splitElementName,
-                            GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
-                            String elementName) {
+        		TransactionImportEntry parentTransactionImportEntry,
+                GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
+                String elementName) {
             super(contentHandler, parentStateHandler, elementName);
             this.splitEntries = splitEntries;
             this.splitEntriesList = splitEntriesList;
             this.splitElementName = splitElementName;
+            this.parentTransactionImportEntry = parentTransactionImportEntry;
         }
         
         /* (non-Javadoc)
@@ -124,7 +167,8 @@ public class SplitEntry {
         @Override
         protected StateHandler getStateHandlerForElement(String qName) {
             if (qName.equals(this.splitElementName)) {
-                return new SplitStateHandler(this.splitEntries, this.splitEntriesList, this.contentHandler, this, qName); 
+                return new SplitStateHandler(this.splitEntries, this.splitEntriesList, this.parentTransactionImportEntry, 
+                		this.contentHandler, this, qName); 
             }
             
             return super.getStateHandlerForElement(qName);
@@ -142,14 +186,16 @@ public class SplitEntry {
     static class SplitStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
         final Map<String, SplitEntry> splitEntries;
         final List<SplitEntry> splitEntriesList;
-        final SplitEntry splitEntry = new SplitEntry();
+        final SplitEntry splitEntry;
 
         SplitStateHandler(final Map<String, SplitEntry> splitEntries, final List<SplitEntry> splitEntriesList, 
-                        GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
-                        String elementName) {
+        		TransactionImportEntry parentTransactionImportEntry,
+                GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
+                String elementName) {
             super(contentHandler, parentStateHandler, elementName);
             this.splitEntries = splitEntries;
             this.splitEntriesList = splitEntriesList;
+            this.splitEntry = new SplitEntry(contentHandler, parentTransactionImportEntry);
         }
 
         /* (non-Javadoc)
@@ -202,7 +248,7 @@ public class SplitEntry {
                 break;
                 
             case "split:slots" : 
-                return new SlotEntry.SlotsStateHandler(this.splitEntry.slots, this.contentHandler, this, qName);
+                return new SlotEntry.SlotsStateHandler(this.splitEntry.slots, this.splitEntry, this.contentHandler, this, qName);
             }
             return super.getStateHandlerForElement(qName);
         }

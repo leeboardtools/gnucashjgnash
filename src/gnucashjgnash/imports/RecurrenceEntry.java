@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.xml.sax.SAXException;
 
+import gnucashjgnash.GnuCashConvertUtil;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractSimpleDataSetter;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractVersionStateHandler;
@@ -31,13 +32,31 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
  * @author albert
  *
  */
-public class RecurrenceEntry {
-	IntEntry mult = new IntEntry();
+public class RecurrenceEntry extends ParsedEntry {
+	IntEntry mult = new IntEntry(this);
 	String periodType;
-	GDateEntry start = new GDateEntry();
+	GDateEntry start = new GDateEntry(this);
 	String weekendAdj;
 	
 	
+	/**
+	 * @param contentHandler
+	 */
+	protected RecurrenceEntry(GnuCashToJGnashContentHandler contentHandler, ParsedEntry parentParsedEntry) {
+		super(contentHandler);
+		this.parentEntry = parentParsedEntry;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+		return GnuCashConvertUtil.getString("Message.ParsedEntry.RecurrenceEntry", this.periodType);
+	}
+
+
 	boolean validateParse(StateHandler stateHandler, String qName) {
 		if (!mult.validateParse(stateHandler, "recurrence:mult")) {
 			return false;
@@ -53,11 +72,14 @@ public class RecurrenceEntry {
 	
 	static class RecurrencesStateHandler extends AbstractStateHandler {
 		final List<RecurrenceEntry> recurrenceEntries;
+		final ParsedEntry parentParsedEntry;
 
-		RecurrencesStateHandler(List<RecurrenceEntry> recurrenceEntries, GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
+		RecurrencesStateHandler(List<RecurrenceEntry> recurrenceEntries, ParsedEntry parentParsedEntry,
+				GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
 				String elementName) {
 			super(contentHandler, parentStateHandler, elementName);
 			this.recurrenceEntries = recurrenceEntries;
+			this.parentParsedEntry = parentParsedEntry;
 		}
 
 		/* (non-Javadoc)
@@ -75,9 +97,9 @@ public class RecurrenceEntry {
 		protected StateHandler getStateHandlerForElement(String qName) {
 			switch (qName) {
 			case "gnc:recurrence" :
-				RecurrenceEntry recurrenceEntry = new RecurrenceEntry();
+				RecurrenceEntry recurrenceEntry = new RecurrenceEntry(this.contentHandler, this.parentParsedEntry);
 				this.recurrenceEntries.add(recurrenceEntry);
-				return new RecurrenceStateHandler(recurrenceEntry, contentHandler, parentStateHandler, qName);
+				return new RecurrenceStateHandler(recurrenceEntry, this.contentHandler, this, qName);
 				
 			}
 			

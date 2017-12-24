@@ -33,6 +33,7 @@ public class TimeEntry {
     LocalDate localDate = LocalDate.now();
     OffsetTime offsetTime = OffsetTime.now();
     int zoneOffset;
+    boolean isParsed;
     String parseError = null;
 
     static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss ZZ");
@@ -61,6 +62,7 @@ public class TimeEntry {
                             timeEntry.parseError = null;
                             timeEntry.localDate = LocalDate.parse(value, DATE_TIME_FORMATTER);
                             timeEntry.offsetTime = OffsetTime.parse(value, DATE_TIME_FORMATTER);
+                            timeEntry.isParsed = true;
                         }
                         catch (DateTimeParseException e) {
                             timeEntry.parseError = e.getLocalizedMessage();
@@ -91,6 +93,10 @@ public class TimeEntry {
             return false;
         }
         return true;
+    }
+    
+    boolean isParsed() {
+    	return this.isParsed;
     }
     
     
