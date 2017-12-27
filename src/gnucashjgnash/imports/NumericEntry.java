@@ -84,7 +84,7 @@ public class NumericEntry extends ParsedEntry {
 
             int dividerIndex = this.characters.indexOf('/');
             if (dividerIndex < 0) {
-                recordWarningOld("NumericValueMissingDiv_" + this.elementName, "Message.Parse.XMLNumericDividerMissing", this.elementName);
+                this.contentHandler.recordWarning(this.numericEntry.parentSource, "Message.Parse.XMLNumericDividerMissing", this.elementName);
                 return;
             }
 
@@ -97,7 +97,7 @@ public class NumericEntry extends ParsedEntry {
                 this.numericEntry.scale = (int)Math.round(Math.log10(this.numericEntry.denominator.intValue()));
             }
             catch (NumberFormatException e) {
-                recordWarningOld("NumericValueInvalid_" + this.elementName, "Message.Parse.XMLNumericValueInvalid", this.elementName);
+            	this.contentHandler.recordWarning(this.numericEntry.parentSource, "Message.Parse.XMLNumericValueInvalid", this.elementName);
             }
         }
     }

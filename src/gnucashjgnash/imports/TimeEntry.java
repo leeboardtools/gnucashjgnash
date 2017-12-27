@@ -114,7 +114,7 @@ public class TimeEntry extends ParsedEntry {
 
     boolean validateParse(GnuCashToJGnashContentHandler.StateHandler stateHandler, String qName) {
         if (this.parseError != null) {
-            stateHandler.recordWarningOld("TimeParseError_" + qName, "Message.Parse.XMLTimeParseError", qName, this.parseError);
+            stateHandler.recordWarning("Message.Parse.XMLTimeParseError", qName, this.parseError);
             return false;
         }
         return true;

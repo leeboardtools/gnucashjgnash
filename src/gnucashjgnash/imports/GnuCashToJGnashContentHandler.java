@@ -302,6 +302,8 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
         void recordWarningOld(String msgId, String key, Object ... arguments);
         void recordWarning(String key, Object ...arguments);
+        
+        GnuCashToJGnashContentHandler getContentHandler();
     }
 
 
@@ -388,6 +390,10 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
             this.contentHandler.recordWarning(parsedEntry, key, arguments);
         }
 
+        @Override
+        public GnuCashToJGnashContentHandler getContentHandler() {
+        	return this.contentHandler;
+        }
     }
 
 
@@ -980,6 +986,9 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 				if ((title == null) || title.isEmpty()) {
 					title = this.accountImportEntry.id.id;
 				}
+			}
+			if (title == null) {
+				title = GnuCashConvertUtil.getString("Message.Notice.OrphanTransactions");
 			}
 			
 			return title;
