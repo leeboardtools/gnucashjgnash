@@ -38,7 +38,7 @@ public class GDateEntry extends ParsedEntry {
 	 */
 	protected GDateEntry(ParsedEntry parentParsedEntry) {
 		super(null);
-		this.parentEntry = parentParsedEntry;
+		this.parentSource = parentParsedEntry;
 	}
 
 
@@ -57,7 +57,7 @@ public class GDateEntry extends ParsedEntry {
     
     public boolean validateParse(StateHandler stateHandler, String qName) {
     	if (this.parseError != null) {
-            stateHandler.recordWarning("GDateParseError_" + qName, "Message.Parse.XMLGDateParseError", qName, this.parseError);
+            stateHandler.recordWarningOld("GDateParseError_" + qName, "Message.Parse.XMLGDateParseError", qName, this.parseError);
     		return false;
     	}
     	return true;
@@ -75,6 +75,14 @@ public class GDateEntry extends ParsedEntry {
             gDateEntry.updateLocatorInfo(contentHandler);
         }
         
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	return this.gDateEntry;
+        }
         
 
         /* (non-Javadoc)

@@ -16,16 +16,26 @@
 */
 package gnucashjgnash.action;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
+import javafx.scene.control.cell.TextFieldTreeCell;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Callback;
+import javafx.util.StringConverter;
 import jgnash.engine.DataStoreType;
 import jgnash.util.FileUtils;
 import jgnash.util.ResourceUtils;
@@ -35,6 +45,8 @@ import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 
 import gnucashjgnash.GnuCashConvertUtil;
+import gnucashjgnash.NoticeTree;
+import gnucashjgnash.NoticeTree.SourceEntry;
 import gnucashjgnash.imports.GnuCashImport;
 
 public class ImportGnuCashAction {
@@ -49,8 +61,8 @@ public class ImportGnuCashAction {
     }
 
     public static void showAndWait(Stage stage) {
-    		ImportGnuCashAction action = new ImportGnuCashAction();
-    		action.showAndWaitImpl(stage);
+        ImportGnuCashAction action = new ImportGnuCashAction();
+        action.showAndWaitImpl(stage);
     }
     
     private void showAndWaitImpl(Stage stage) {
@@ -130,6 +142,7 @@ public class ImportGnuCashAction {
         private final DataStoreType dataStoreType;
         private final Stage stage;
         private String errorMsg = null;
+        private NoticeTree warningNoticeTree = null;
 
         ImportTask(final String gnuCashFileName, final String jGnashFileName, final DataStoreType dataStoreType, Stage stage) {
             this.gnuCashFileName = gnuCashFileName;
@@ -146,18 +159,20 @@ public class ImportGnuCashAction {
             updateProgress(-1, Long.MAX_VALUE);
 
             final GnuCashImport importer = new GnuCashImport();
-            if (!importer.convertGnuCashToJGnash(this.gnuCashFileName, this.jGnashFileName, this.dataStoreType,
+            boolean result = importer.convertGnuCashToJGnash(this.gnuCashFileName, this.jGnashFileName, this.dataStoreType,
                     new GnuCashImport.StatusCallback() {
-                        @Override
-                        public void updateStatus(long progress, long total, String statusMsg) {
-                            if ((progress >= 0) || (total >= 0)) {
-                                updateProgress(progress, total);
-                            }
-                            if (statusMsg != null) {
-                                updateMessage(statusMsg);
-                            }
-                        }
-                    })) {
+                @Override
+                public void updateStatus(long progress, long total, String statusMsg) {
+                    if ((progress >= 0) || (total >= 0)) {
+                        updateProgress(progress, total);
+                    }
+                    if (statusMsg != null) {
+                        updateMessage(statusMsg);
+                    }
+                }
+            });
+            this.warningNoticeTree = importer.getWarningNoticeTree();
+            if (!result) {
                 this.errorMsg = importer.getErrorMsg();
                 System.out.println("GnuCash Import Failed: " + this.errorMsg);
                 cancel();
@@ -167,25 +182,106 @@ public class ImportGnuCashAction {
         }
 
         private void onCancelled() {
-            final Alert alert = new Alert(Alert.AlertType.ERROR, this.errorMsg);
-
-            alert.setTitle(GnuCashConvertUtil.getString("Title.Error.ImportFailed"));
-            alert.initOwner(stage);
-
-            alert.showAndWait();
-            progressStage.close();
+        	displayFinalStatus();
         }
 
         private void onSuccess() {
-            final Alert alert = new Alert(Alert.AlertType.INFORMATION, this.errorMsg);
-
-            alert.setTitle(GnuCashConvertUtil.getString("Title.ImportComplete"));
-            alert.setContentText(GnuCashConvertUtil.getString("Message.ImportComplete", gnuCashFileName, jGnashFileName));
-            alert.initOwner(stage);
-
-            alert.showAndWait();
-            progressStage.close();
+        	displayFinalStatus();
         }
+        
+        
+        private void displayFinalStatus() {
+        	progressStage.close();
+        	
+        	if ((this.errorMsg != null) && !this.errorMsg.isEmpty()) {
+                final Alert alert = new Alert(Alert.AlertType.ERROR, this.errorMsg);
+
+                alert.setTitle(GnuCashConvertUtil.getString("Title.Error.ImportFailed"));
+                alert.initOwner(stage);
+
+                alert.showAndWait();
+        	}
+        	else if ((this.warningNoticeTree == null) || !this.warningNoticeTree.isNotices()) {
+                final Alert alert = new Alert(Alert.AlertType.INFORMATION, this.errorMsg);
+
+                alert.setTitle(GnuCashConvertUtil.getString("Title.ImportComplete"));
+                alert.setContentText(GnuCashConvertUtil.getString("Message.ImportComplete", gnuCashFileName, jGnashFileName));
+                alert.initOwner(stage);
+
+                alert.showAndWait();
+        	}
+        	else {
+        		Stage stage = new Stage();
+        		stage.setTitle(GnuCashConvertUtil.getString("Title.Warnings"));
+        		stage.setMinWidth(500);
+        		stage.setMinHeight(300);
+        		
+        		VBox pane = new VBox();
+        		pane.setAlignment(Pos.CENTER);
+        		pane.setPadding(new Insets(10));
+        		
+        		Text caption = new Text(GnuCashConvertUtil.getString("Message.WarningsCaption"));
+        		pane.getChildren().add(caption);
+
+        		WarningTreeItem root = new WarningTreeItem(this.warningNoticeTree.getRootSourceEntry());
+        		TreeView<NoticeTree.SourceEntry> treeView = new TreeView<NoticeTree.SourceEntry>(root);
+        		treeView.setShowRoot(false);
+        		pane.getChildren().add(treeView);
+        		
+        		Button closeButton = new Button(GnuCashConvertUtil.getString("Button.Close"));
+        		closeButton.setDefaultButton(true);
+        		pane.getChildren().add(closeButton);
+        		closeButton.setOnAction(e -> stage.close());
+        		
+        		Scene scene = new Scene(pane);
+        		stage.setScene(scene);
+        		
+        		stage.showAndWait();
+        	}
+        }
+        
     }
 
+    static class WarningTreeItem extends TreeItem<NoticeTree.SourceEntry> {
+    	final NoticeTree.SourceEntry sourceEntry;
+    	boolean isChildrenLoaded = false;
+    	
+    	WarningTreeItem(NoticeTree.SourceEntry sourceEntry) {
+    		this.sourceEntry = sourceEntry;
+    		setValue(sourceEntry);
+    	}
+
+		/* (non-Javadoc)
+		 * @see javafx.scene.control.TreeItem#getChildren()
+		 */
+		@Override
+		public ObservableList<TreeItem<NoticeTree.SourceEntry>> getChildren() {
+			buildChildren();
+			return super.getChildren();
+		}
+    	
+		/* (non-Javadoc)
+		 * @see javafx.scene.control.TreeItem#isLeaf()
+		 */
+		@Override
+		public boolean isLeaf() {
+			return !this.sourceEntry.hasChildren();
+		}
+
+		private void buildChildren() {
+			if (!this.isChildrenLoaded) {
+				NoticeTree.SourceEntry [] childSourceEntries = this.sourceEntry.getChildren();
+				if (childSourceEntries.length > 0) {
+					ObservableList<WarningTreeItem> children = FXCollections.observableArrayList();
+					for (NoticeTree.SourceEntry sourceEntry : childSourceEntries) {
+						children.add(new WarningTreeItem(sourceEntry));
+					}
+					
+					super.getChildren().setAll(children);
+				}
+				
+				this.isChildrenLoaded = true;
+			}
+		}
+    }
 }

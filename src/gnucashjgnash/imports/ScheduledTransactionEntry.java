@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import gnucashjgnash.GnuCashConvertUtil;
+import gnucashjgnash.NoticeTree.Source;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractSimpleDataSetter;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractVersionStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
@@ -87,15 +88,15 @@ public class ScheduledTransactionEntry extends ParsedEntry {
 
 	
     /* (non-Javadoc)
-	 * @see gnucashjgnash.imports.ParsedEntry#getParentParsedEntry(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 * @see gnucashjgnash.imports.ParsedEntry#getParentSource()
 	 */
 	@Override
-	public ParsedEntry getParentParsedEntry(GnuCashToJGnashContentHandler contentHandler) {
+	public Source getParentSource() {
 		return rootParsedParentEntry;
 	}
 
 
-
+	
 	/* (non-Javadoc)
 	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
 	 */
@@ -181,6 +182,14 @@ public class ScheduledTransactionEntry extends ParsedEntry {
 				String elementName) {
 			super(contentHandler, parentStateHandler, elementName);
 			this.scheduledTransactionEntry = new ScheduledTransactionEntry(contentHandler);
+		}
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+		@Override
+		public ParsedEntry getParsedEntry() {
+			return this.scheduledTransactionEntry;
 		}
 
 		/* (non-Javadoc)
@@ -321,13 +330,13 @@ public class ScheduledTransactionEntry extends ParsedEntry {
     	for (SplitEntry splitEntry : transactionEntry.originalSplitsList) {
     		AccountImportEntry splitAccountImportEntry = contentHandler.templateAccountImportEntries.get(splitEntry.account.id);
     		if (splitAccountImportEntry == null) {
-    			contentHandler.recordWarning("TemplateTransactionSplitAccountMissing", "Message.Warning.TemplateTransactionSplitAccountMissing", 
+    			contentHandler.recordWarningOld("TemplateTransactionSplitAccountMissing", "Message.Warning.TemplateTransactionSplitAccountMissing", 
     					splitEntry.id.id, splitEntry.account.id);
     			return true;
     		}
     		else if (accountImportEntry != null) {
     			if (splitAccountImportEntry != accountImportEntry) {
-    				contentHandler.recordWarning("TemplateTransactionSplitAccountsDifferent", "Message.Warning.TemplateTransactionSplitAccountsDifferent", 
+    				contentHandler.recordWarningOld("TemplateTransactionSplitAccountsDifferent", "Message.Warning.TemplateTransactionSplitAccountsDifferent", 
         					transactionEntry.id.id);
     				return true;
     			}
@@ -399,16 +408,16 @@ public class ScheduledTransactionEntry extends ParsedEntry {
     		GnuCashToJGnashContentHandler contentHandler) {
     	SlotEntry slotEntry = originalSplitEntry.slots.get("sched-xaction");
     	if (slotEntry == null) {
-    		contentHandler.recordWarning("SchedXActionSlotMissing", "Message.Warning.SchedXActionSlotMissing", originalSplitEntry.id.id);
+    		contentHandler.recordWarningOld("SchedXActionSlotMissing", "Message.Warning.SchedXActionSlotMissing", originalSplitEntry.id.id);
     		return false;
     	}
     	if (slotEntry.frameSlotEntries == null) {
-    		contentHandler.recordWarning("SchedXActionSlotNotFrame", "Message.Warning.SchedXActionSlotNotFrame", originalSplitEntry.id.id);
+    		contentHandler.recordWarningOld("SchedXActionSlotNotFrame", "Message.Warning.SchedXActionSlotNotFrame", originalSplitEntry.id.id);
     		return false;
     	}
     	SlotEntry accountSlotEntry = slotEntry.frameSlotEntries.get("account");
     	if (accountSlotEntry == null) {
-    		contentHandler.recordWarning("SchedXActionSlotMissingAccount", "Message.Warning.SchedXActionSlotMissingAccount", originalSplitEntry.id.id);
+    		contentHandler.recordWarningOld("SchedXActionSlotMissingAccount", "Message.Warning.SchedXActionSlotMissingAccount", originalSplitEntry.id.id);
     		return false;
     	}
     	
@@ -423,7 +432,7 @@ public class ScheduledTransactionEntry extends ParsedEntry {
     			normalSplitEntry.value.numerator = normalSplitEntry.value.numerator.negate(); 
     		}
     		catch (NumberFormatException e) {
-        		contentHandler.recordWarning("SchedXActionSlotCreditFormulaValueInvalid", "Message.Warning.SchedXActionSlotCreditFormulaValueInvalid", 
+        		contentHandler.recordWarningOld("SchedXActionSlotCreditFormulaValueInvalid", "Message.Warning.SchedXActionSlotCreditFormulaValueInvalid", 
         				originalSplitEntry.id.id, e.getLocalizedMessage());
     			return false;
     		}
@@ -433,7 +442,7 @@ public class ScheduledTransactionEntry extends ParsedEntry {
     			normalSplitEntry.value.fromRealString(debitFormulaSlotEntry.value, BigInteger.valueOf(1000));
     		}
     		catch (NumberFormatException e) {
-        		contentHandler.recordWarning("SchedXActionSlotDebitFormulaValueInvalid", "Message.Warning.SchedXActionSlotDebitFormulaValueInvalid", 
+        		contentHandler.recordWarningOld("SchedXActionSlotDebitFormulaValueInvalid", "Message.Warning.SchedXActionSlotDebitFormulaValueInvalid", 
         				originalSplitEntry.id.id, e.getLocalizedMessage());
     			return false;
     		}
@@ -456,7 +465,7 @@ public class ScheduledTransactionEntry extends ParsedEntry {
     public boolean generateJGnashScheduledTransaction(GnuCashToJGnashContentHandler contentHandler, Engine engine) {
     	AccountImportEntry templateAccount = contentHandler.templateAccountImportEntries.get(this.templateAccount.id);
     	if (templateAccount == null) {
-    		contentHandler.recordWarning("TemplateAccountMissing", "Message.Warning.TemplateAccountMissing", this.name, this.templateAccount.id);
+    		contentHandler.recordWarningOld("TemplateAccountMissing", "Message.Warning.TemplateAccountMissing", this.name, this.templateAccount.id);
     		return true;
     	}
     	
@@ -526,7 +535,7 @@ public class ScheduledTransactionEntry extends ParsedEntry {
     	}
     	
     	if (jGnashReminder == null) {
-    		contentHandler.recordWarning("UnsupportedRecurrencePeriod", "Message.Warning.UnsupportedRecurrencePeriod", 
+    		contentHandler.recordWarningOld("UnsupportedRecurrencePeriod", "Message.Warning.UnsupportedRecurrencePeriod", 
     				this.name, recurrenceEntry.periodType);
     		return true;
     	}

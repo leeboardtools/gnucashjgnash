@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import gnucashjgnash.GnuCashConvertUtil;
+import gnucashjgnash.NoticeTree.Source;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractSimpleDataSetter;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractVersionStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
@@ -51,25 +52,14 @@ public class TransactionImportEntry extends ParsedEntry {
 	IdEntry id = new IdEntry(this);
     CommodityEntry.CurrencyRef currencyRef = new CommodityEntry.CurrencyRef();
     String num;
-    TimeEntry datePosted = new TimeEntry();
-    TimeEntry dateEntered = new TimeEntry();
+    TimeEntry datePosted = new TimeEntry(this);
+    TimeEntry dateEntered = new TimeEntry(this);
     String description;
     Map<String, SlotEntry> slots = new HashMap<>();
     Map<String, SplitEntry> splits = new HashMap<>();
     List<SplitEntry> originalSplitsList = new ArrayList<>();
     
     boolean isTemplateTransaction = false;
-
-
-    static ParsedEntry orphanParsedParentEntry = new ParsedEntry(null) {
-
-		@Override
-		public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
-			return GnuCashConvertUtil.getString("Message.ParsedEntry.OrphanedTransactionImportEntryParent");
-		}
-    	
-    };
-    
 
     /**
 	 * @param contentHandler
@@ -81,24 +71,13 @@ public class TransactionImportEntry extends ParsedEntry {
 	
     
     /* (non-Javadoc)
-	 * @see gnucashjgnash.imports.ParsedEntry#getParentParsedEntry(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 * @see gnucashjgnash.imports.ParsedEntry#getParentSource()
 	 */
 	@Override
-	public ParsedEntry getParentParsedEntry(GnuCashToJGnashContentHandler contentHandler) {
-		if (this.isTemplateTransaction) {
-			// TODO:
-		}
-		
-		for (SplitEntry splitEntry : this.originalSplitsList) {
-			if (splitEntry.account.isParsed()) {
-				AccountImportEntry accountImportEntry = contentHandler.accountImportEntries.get(splitEntry.account.id);
-				if (accountImportEntry != null) {
-					return accountImportEntry;
-				}
-			}
-		}
-		return orphanParsedParentEntry;
+	public Source getParentSource() {
+		return this.contentHandler.getTransactionParentSource(this);
 	}
+
 
 
 	/* (non-Javadoc)
@@ -113,7 +92,7 @@ public class TransactionImportEntry extends ParsedEntry {
 		if (this.datePosted.isParsed()) {
 			return this.datePosted.toDateString();
 		}
-		return null;
+		return this.description;
 	}
 
 
@@ -123,6 +102,20 @@ public class TransactionImportEntry extends ParsedEntry {
 	@Override
 	public String getUniqueId() {
 		return this.id.id;
+	}
+	
+	
+	/**
+	 * @return	The id of an account referenced by the transaction, <code>null</code> if none found.
+	 */
+	public String getAccountId() {
+		for (SplitEntry splitEntry : this.originalSplitsList) {
+			if (splitEntry.account.isParsed()) {
+				return splitEntry.account.id;
+			}
+		}
+		
+		return null;
 	}
 
 
@@ -141,7 +134,16 @@ public class TransactionImportEntry extends ParsedEntry {
             this.transactionEntry = new TransactionImportEntry(contentHandler);
         }
 
-        /* (non-Javadoc)
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+		@Override
+		public ParsedEntry getParsedEntry() {
+			return this.transactionEntry;
+		}
+
+		/* (non-Javadoc)
          * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractVersionStateHandler#validateVersion(java.lang.String)
          */
         @Override
@@ -397,9 +399,7 @@ public class TransactionImportEntry extends ParsedEntry {
                     case INCOME :
                     case EQUITY :
                         if (account != null) {
-                            recordSkippingTransaction(splitsList, contentHandler,
-                                    null,
-                                    "Message.Warning.MultipleInvestmentTransactionAccounts");
+                            recordSkippingTransaction(splitsList, "Message.Warning.MultipleInvestmentTransactionAccounts");
                             return false;
                         }
                         accountSplitEntry = splitEntry;
@@ -412,9 +412,7 @@ public class TransactionImportEntry extends ParsedEntry {
                         continue;
                         
                     default:
-                        recordSkippingTransaction(splitsList, contentHandler,
-                                null, 
-                                "Message.Warning.UnsupportedInvestmentSplitAccount", 
+                        recordSkippingTransaction(splitsList, "Message.Warning.UnsupportedInvestmentSplitAccount", 
                                 jGnashAccount.getName(), jGnashAccount.getAccountType());
                         return false;
                     
@@ -422,9 +420,7 @@ public class TransactionImportEntry extends ParsedEntry {
                 }
                 
                 if (jGnashAccount == null) {
-                    recordSkippingTransaction(splitsList, contentHandler,
-                            null, 
-                            "Message.Warning.InvestmentTransactionAccountMissing",
+                    recordSkippingTransaction(splitsList, "Message.Warning.InvestmentTransactionAccountMissing",
                             splitEntry.account.id);
                     return false;
                 }
@@ -504,11 +500,11 @@ public class TransactionImportEntry extends ParsedEntry {
             }
         }
         
-        recordSkippingTransaction(splitsList, contentHandler, null, "Message.Warning.UnsupportedInvestmentTransaction");
+        recordSkippingTransaction(splitsList, "Message.Warning.UnsupportedInvestmentTransaction");
         return false;
     }
     
-    void recordSkippingTransaction(List<SplitEntry> splitsList, GnuCashToJGnashContentHandler contentHandler, String id, String key, Object ...arguments) {
+    void recordSkippingTransaction(List<SplitEntry> splitsList, String key, Object ...arguments) {
         String description = "";
         String separator = "";
         for (SplitEntry splitEntry : splitsList) {
@@ -525,19 +521,19 @@ public class TransactionImportEntry extends ParsedEntry {
         switch (arguments.length) {
             case 0 :
             default :
-                contentHandler.recordWarning(id, key, this.datePosted.toDateString(), description);
+                contentHandler.recordWarning(this, key, this.datePosted.toDateString(), description);
                 break;
             case 1 :
-                contentHandler.recordWarning(id, key, this.datePosted.toDateString(), description, arguments[0]);
+                contentHandler.recordWarning(this, key, this.datePosted.toDateString(), description, arguments[0]);
                 break;
             case 2 :
-                contentHandler.recordWarning(id, key, this.datePosted.toDateString(), description, arguments[0], arguments[1]);
+                contentHandler.recordWarning(this, key, this.datePosted.toDateString(), description, arguments[0], arguments[1]);
                 break;
             case 3 :
-                contentHandler.recordWarning(id, key, this.datePosted.toDateString(), description, arguments[0], arguments[1], arguments[2]);
+                contentHandler.recordWarning(this, key, this.datePosted.toDateString(), description, arguments[0], arguments[1], arguments[2]);
                 break;
             case 4:
-                contentHandler.recordWarning(id, key, this.datePosted.toDateString(), description, arguments[0], arguments[1], arguments[3]);
+                contentHandler.recordWarning(this, key, this.datePosted.toDateString(), description, arguments[0], arguments[1], arguments[3]);
                 break;
         }
     }
@@ -614,7 +610,7 @@ public class TransactionImportEntry extends ParsedEntry {
                                                             : null;
         }
         if (masterSplitEntry == null) {
-            contentHandler.recordWarning("SplitNoSupportedAccounts", "Message.Warning.SplitNoSupportedAccounts", this.id.id, this.datePosted.toDateString());
+            contentHandler.recordWarning(this, "Message.Warning.SplitNoSupportedAccounts");
             return false;
         }
         

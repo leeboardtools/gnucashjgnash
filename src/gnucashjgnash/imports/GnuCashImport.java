@@ -23,6 +23,7 @@ import jgnash.util.FileUtils;
 import org.xml.sax.*;
 
 import gnucashjgnash.GnuCashConvertUtil;
+import gnucashjgnash.NoticeTree;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -42,6 +43,7 @@ public class GnuCashImport {
     private static final Logger LOG = Logger.getLogger(GnuCashImport.class.getName());
 
     private String errorMsg;
+    private NoticeTree warningNoticeTree;
     private static SAXParserFactory parserFactory;
 
     public GnuCashImport() {
@@ -50,6 +52,10 @@ public class GnuCashImport {
 
     public String getErrorMsg() {
         return errorMsg;
+    }
+    
+    public NoticeTree getWarningNoticeTree() {
+    	return this.warningNoticeTree;
     }
 
 
@@ -229,6 +235,7 @@ public class GnuCashImport {
             }
     
             GnuCashToJGnashContentHandler contentHandler = new GnuCashToJGnashContentHandler(engine, statusCallback);
+            this.warningNoticeTree = contentHandler.warningNoticeTree;
             xmlReader.setContentHandler(contentHandler);
             try {
     

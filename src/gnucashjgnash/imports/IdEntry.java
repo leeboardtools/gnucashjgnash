@@ -33,7 +33,7 @@ public class IdEntry extends ParsedEntry {
 	 */
 	protected IdEntry(ParsedEntry parentParsedEntry) {
 		super(null);
-		this.parentEntry = parentParsedEntry;
+		this.parentSource = parentParsedEntry;
 	}
 
 
@@ -56,6 +56,15 @@ public class IdEntry extends ParsedEntry {
             this.idEntry.updateLocatorInfo(contentHandler);
         }
 
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	return this.idEntry;
+        }
+
         @Override
         protected void endState() {
             super.endState();
@@ -75,11 +84,11 @@ public class IdEntry extends ParsedEntry {
 
     boolean validateGUIDParse(GnuCashToJGnashContentHandler.StateHandler stateHandler, String qName) {
         if (this.type == null) {
-            stateHandler.recordWarning("IdTypeMissing_" + qName, "Message.Parse.XMLIdMissingType", qName, "type");
+            stateHandler.recordWarningOld("IdTypeMissing_" + qName, "Message.Parse.XMLIdMissingType", qName, "type");
             return false;
         }
         if (!"guid".equals(this.type)) {
-            stateHandler.recordWarning("IdTypeInvalid_" + qName, "Message.Parse.XMLIdTypeNotGUID", qName, "type", "guid");
+            stateHandler.recordWarningOld("IdTypeInvalid_" + qName, "Message.Parse.XMLIdTypeNotGUID", qName, "type", "guid");
             return false;
         }
         return true;

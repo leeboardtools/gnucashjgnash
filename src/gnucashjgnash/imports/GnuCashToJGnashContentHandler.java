@@ -26,6 +26,8 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
 import gnucashjgnash.GnuCashConvertUtil;
+import gnucashjgnash.NoticeTree;
+import gnucashjgnash.NoticeTree.Source;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -68,8 +70,68 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
     final Map<String, PriceEntry> priceEntries = new HashMap<>();
     final Map<String, SortedMap<LocalDate, PriceEntry>> sortedPriceEntries = new HashMap<>();
+    
+    final Map<String, NoticeTree.Source> priceCommoditySources = new HashMap<>();
+    final NoticeTree.Source priceCommoditySourcesRoot = new NoticeTree.Source() {
+		
+		@Override
+		public String getSourceTitle() {
+			return GnuCashConvertUtil.getString("Message.Notice.CommodityPricesRoot");
+		}
+		
+		@Override
+		public String getSourceDescription() {
+			return null;
+		}
+		
+		@Override
+		public Source getParentSource() {
+			return null;
+		}
+	};
+	
+	final NoticeTree.Source priceCommodityOrphanEntry = new NoticeTree.Source() {
+		
+		@Override
+		public String getSourceTitle() {
+			return GnuCashConvertUtil.getString("Message.Notice.OrphanCommodityPrices");
+		}
+		
+		@Override
+		public String getSourceDescription() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+		
+		@Override
+		public Source getParentSource() {
+			return priceCommoditySourcesRoot;
+		}
+	};
 
-    final Map<String, AccountImportEntry> accountImportEntries = new HashMap<>();
+	
+    final Map<String, NoticeTree.Source> priceCurrencySources = new HashMap<>();
+    final NoticeTree.Source priceCurrencySourcesRoot = new NoticeTree.Source() {
+		
+		@Override
+		public String getSourceTitle() {
+			return GnuCashConvertUtil.getString("Message.Notice.CurrencyPricesRoot");
+		}
+		
+		@Override
+		public String getSourceDescription() {
+			return null;
+		}
+		
+		@Override
+		public Source getParentSource() {
+			return null;
+		}
+	};
+
+    
+	
+	final Map<String, AccountImportEntry> accountImportEntries = new HashMap<>();
 
     final Set<String> accountIdsToIgnore = new HashSet<>();
 
@@ -80,12 +142,53 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     //final Map<String, TransactionImportEntry> transactionEntries = new HashMap<>();
     final SortedMap<LocalDate, Map<String, TransactionImportEntry>> transactionEntriesByDate = new TreeMap<>();
     int totalTransactionEntryCount;
+
+    final Map<String, NoticeTree.Source> transactionAccountSources = new HashMap<>();
+    final NoticeTree.Source transactionAccountSourcesRoot = new NoticeTree.Source() {
+
+		@Override
+		public Source getParentSource() {
+			return null;
+		}
+
+		@Override
+		public String getSourceTitle() {
+			return GnuCashConvertUtil.getString("Message.Notice.TransactionsRoot");
+		}
+
+		@Override
+		public String getSourceDescription() {
+			return null;
+		}
+    };
+    final NoticeTree.Source orphanTransactionAccountSources = new NoticeTree.Source() {
+		
+		@Override
+		public String getSourceTitle() {
+			return GnuCashConvertUtil.getString("Message.Notice.OrphanTransactions");
+		}
+		
+		@Override
+		public String getSourceDescription() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+		
+		@Override
+		public Source getParentSource() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+	};
+    
     
     final Map<String, AccountImportEntry> templateAccountImportEntries = new HashMap<>();
     final Map<String, TransactionImportEntry> templateTransactionImportEntries = new HashMap<>();
     final Map<String, ScheduledTransactionEntry> scheduledTransactionEntries = new HashMap<>();
     int totalScheduledTransactionEntryCount;
 
+    final NoticeTree warningNoticeTree = new NoticeTree();
+    
     final Set<String> recordedWarningMsgIds = new HashSet<>();
     final List<String> recordedWarnings = new ArrayList<>();
     String errorMsg;
@@ -185,6 +288,8 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
 
     interface StateHandler {
+    	ParsedEntry getParsedEntry();
+    	
         String getElementName();
         void handleStateAttributes(Attributes atts);
 
@@ -195,7 +300,8 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
         void stateHandlerReactivated();
 
-        void recordWarning(String msgId, String key, Object ... arguments);
+        void recordWarningOld(String msgId, String key, Object ... arguments);
+        void recordWarning(String key, Object ...arguments);
     }
 
 
@@ -262,9 +368,26 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         }
 
         @Override
-        public void recordWarning(String msgId, String key, Object ... arguments) {
-            this.contentHandler.recordWarning(msgId, key, arguments);
+        public void recordWarningOld(String msgId, String key, Object ... arguments) {
+            this.contentHandler.recordWarningOld(msgId, key, arguments);
         }
+
+        @Override
+        public void recordWarning(String key, Object ... arguments) {
+        	ParsedEntry parsedEntry = this.getParsedEntry();
+        	if (parsedEntry == null) {
+        		for (int index = this.contentHandler.stateHandlers.size() - 1; index >= 0; --index) {
+        			StateHandler stateHandler = this.contentHandler.stateHandlers.get(index);
+        			parsedEntry = stateHandler.getParsedEntry();
+        			if (parsedEntry != null) {
+        				break;
+        			}
+        		}
+        	}
+        	
+            this.contentHandler.recordWarning(parsedEntry, key, arguments);
+        }
+
     }
 
 
@@ -278,6 +401,14 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         NOP_StateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
                          String elementName) {
             super(contentHandler, parentStateHandler, elementName);
+        }
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	return null;
         }
 
         @Override
@@ -306,6 +437,14 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         SkipStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler,
                 String elementName) {
             super(contentHandler, parentStateHandler, elementName);
+        }
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	return null;
         }
 
         /* (non-Javadoc)
@@ -343,6 +482,14 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         OuterStateHandler(GnuCashToJGnashContentHandler contentHandler) {
             super(contentHandler, null, null);
         }
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	return null;
+        }
 
         /* (non-Javadoc)
          * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
@@ -365,6 +512,14 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         GNC_V2_StateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler, String elementName) {
             super(contentHandler, parentStateHandler, elementName);
 
+        }
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	return null;
         }
 
         /* (non-Javadoc)
@@ -397,6 +552,15 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
                                     String elementName) {
             super(contentHandler, parentStateHandler, elementName);
         }
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	// TODO Add a parsed entry for the different counts
+        	return null;
+        }
 
         @Override
         public void handleStateAttributes(Attributes atts) {
@@ -410,17 +574,17 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
             super.endState();
 
             if (this.cdType == null) {
-                recordWarning("MissingCDType", "Message.Parse.XMLMissingAttribute", this.elementName, "cd:type");
+                recordWarning("Message.Parse.XMLMissingAttribute", this.elementName, "cd:type");
             }
             try {
                 int count = Integer.parseInt(this.characters);
                 if (this.contentHandler.countData.get(this.cdType) != null) {
-                    recordWarning("MultipleCountDataEntries_" + this.cdType, "Message.Parse.XMLMultipleCountDataEntries", this.cdType);
+                    recordWarning("Message.Parse.XMLMultipleCountDataEntries", this.cdType);
                 }
                 this.contentHandler.countData.put(this.cdType, count);
             }
             catch (NumberFormatException e) {
-                recordWarning("InvalidCountDataValue", "Message.Parse.XMLValueNotNumber", this.elementName);
+                recordWarning("Message.Parse.XMLValueNotNumber", this.elementName);
             }
         }
     }
@@ -443,7 +607,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
             super.handleStateAttributes(atts);
             this.version = atts.getValue("version");
             if (this.version == null) {
-                recordWarning("MissingVersion", "Message.Parse.XMLMissingAttribute", this.elementName, "version");
+                recordWarning("Message.Parse.XMLMissingAttribute", this.elementName, "version");
             }
 
             if (!validateVersion(this.version)) {
@@ -462,6 +626,14 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     static class BookStateHandler extends AbstractVersionStateHandler {
         BookStateHandler(GnuCashToJGnashContentHandler contentHandler, StateHandler parentStateHandler, String elementName) {
             super(contentHandler, parentStateHandler, elementName);
+        }
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	return null;
         }
 
         /* (non-Javadoc)
@@ -518,7 +690,16 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 			super(contentHandler, parentStateHandler, elementName);
 		}
 
+        
 		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	return null;
+        }
+
+        /* (non-Javadoc)
 		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
 		 */
 		@Override
@@ -583,6 +764,15 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
             this.dataSetter = dataSetter;
         }
 
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	return null;
+        }
+
         @Override
         public void handleStateAttributes(Attributes atts) {
             super.handleStateAttributes(atts);
@@ -601,8 +791,12 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         return errorMsg;
     }
 
+    void recordWarning(NoticeTree.Source source, String key, Object ...arguments) {
+        String msg = GnuCashConvertUtil.getString(key, arguments);
+        this.warningNoticeTree.addNotice(source, msg, null);
+    }
 
-    void recordWarning(String id, String key, Object ... arguments) {
+    void recordWarningOld(String id, String key, Object ... arguments) {
         if (!this.recordedWarningMsgIds.contains(id)) {
             String msg = GnuCashConvertUtil.getString(key, arguments);
             this.recordedWarnings.add(msg);
@@ -623,23 +817,98 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         }
         
         if (priceEntriesForSecurity.put(priceEntry.time.localDate, priceEntry) != null) {
-            recordWarning("DuplicatePriceEntry", "Message.Parse.XMLDuplicatePriceEntry", securityId, priceEntry.time.toDateString());
+            recordWarning(priceEntry.getParentSource(), "Message.Parse.XMLDuplicatePriceEntry", securityId, priceEntry.time.toDateString());
         }
         
         return true;
     }
     
+    
+    class PriceCommoditySource implements NoticeTree.Source {
+    	final String commodityId;
+    	CommodityEntry commodity;
+    	
+    	PriceCommoditySource(String commodityId) {
+    		this.commodityId = commodityId;
+    	}
+    	
+    	void updateCommodity() {
+    		if (this.commodity == null) {
+    			this.commodity = GnuCashToJGnashContentHandler.this.commodityEntries.get(this.commodityId);
+    		}
+    	}
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.NoticeTree.Source#getParentSource()
+		 */
+		@Override
+		public Source getParentSource() {
+			return priceCommoditySourcesRoot;
+		}
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.NoticeTree.Source#getSourceTitle()
+		 */
+		@Override
+		public String getSourceTitle() {
+			updateCommodity();
+			String title = null;
+			if (this.commodity != null) {
+				title = this.commodity.name;
+				if ((title == null) || title.isEmpty()) {
+					title = this.commodity.id;
+				}
+			}
+			return title;
+		}
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.NoticeTree.Source#getSourceDescription()
+		 */
+		@Override
+		public String getSourceDescription() {
+			return null;
+		}
+    	
+    }
+    
+    NoticeTree.Source getPriceParentSource(PriceEntry priceEntry) {
+    	NoticeTree.Source source = null;
+
+    	if (priceEntry.commodityRef.isParsed()) {
+    		String securityId = priceEntry.commodityRef.id;
+        	source = this.priceCommoditySources.get(securityId);
+	        if (source == null) {
+	        	source = new PriceCommoditySource(securityId);
+	        	this.priceCommoditySources.put(securityId, source);
+	        }
+    	}
+    	else if (priceEntry.currencyRef.isParsed()) {
+    		String currencyId = priceEntry.currencyRef.id;
+        	source = this.priceCurrencySources.get(currencyId);
+	        if (source == null) {
+	        	source = new PriceCommoditySource(currencyId);
+	        	this.priceCurrencySources.put(currencyId, source);
+	        }
+    	}
+    	else {
+    		return priceCommodityOrphanEntry;
+    	}
+    	return source;
+    }
+
+    
     boolean addAccountEntry(AccountImportEntry entry) {
     	switch (this.transactionMode) {
     	case NORMAL :
             if (this.accountImportEntries.put(entry.id.id, entry) != null) {
-                recordWarning("MultipleAccountEntries", "Message.Parse.XMLMultipleAccountEntries", entry.name, entry.id);
+                recordWarning(entry, "Message.Parse.XMLMultipleAccountEntries", entry.name, entry.id);
             }
     		break;
     		
     	case TEMPLATE :
             if (this.templateAccountImportEntries.put(entry.id.id, entry) != null) {
-                recordWarning("MultipleTemplateAccountEntries", "Message.Parse.XMLMultipleTemplateAccountEntries", entry.name, entry.id);
+                recordWarning(entry, "Message.Parse.XMLMultipleTemplateAccountEntries", entry.name, entry.id);
             }
     		break;
     	}
@@ -656,7 +925,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
                 this.transactionEntriesByDate.put(entry.datePosted.localDate, dateEntries);
             }
             if (dateEntries.put(entry.id.id, entry) != null) {
-                recordWarning("DuplicateTransaction", "Message.Parse.XMLDuplicateTransaction", entry.id, entry.datePosted.toDateString());
+                recordWarning(entry, "Message.Parse.XMLDuplicateTransaction", entry.id, entry.datePosted.toDateString());
             }
             else {
                 ++this.totalTransactionEntryCount;
@@ -665,7 +934,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
             
     	case TEMPLATE :
     		if (this.templateTransactionImportEntries.put(entry.id.id, entry) != null) {
-                recordWarning("DuplicateTemplateTransaction", "Message.Parse.XMLDuplicateTemplateTransaction", entry.id, entry.datePosted.toDateString());
+                recordWarning(entry, "Message.Parse.XMLDuplicateTemplateTransaction", entry.id, entry.datePosted.toDateString());
     		}
     		break;
     	}
@@ -674,9 +943,80 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     }
     
     
+    class TransactionAccountSource implements NoticeTree.Source {
+    	final String accountId;
+    	AccountImportEntry accountImportEntry;
+    	
+		TransactionAccountSource(String accountId) {
+			this.accountId = accountId;
+		}
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.NoticeTree.Source#getParentSource()
+		 */
+		@Override
+		public Source getParentSource() {
+			return transactionAccountSourcesRoot;
+		}
+		
+		void updateAccountImportEntry() {
+			if (this.accountImportEntry != null) {
+				this.accountImportEntry = GnuCashToJGnashContentHandler.this.accountImportEntries.get(this.accountId);
+			}
+		}
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.NoticeTree.Source#getSourceTitle()
+		 */
+		@Override
+		public String getSourceTitle() {
+			updateAccountImportEntry();
+			String title = null;
+			if (this.accountImportEntry != null) {
+				title = this.accountImportEntry.name;
+				if ((title == null) || title.isEmpty()) {
+					title = this.accountImportEntry.description;
+				}
+				if ((title == null) || title.isEmpty()) {
+					title = this.accountImportEntry.id.id;
+				}
+			}
+			
+			return title;
+		}
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.NoticeTree.Source#getSourceDescription()
+		 */
+		@Override
+		public String getSourceDescription() {
+			return null;
+		}
+    	
+    }
+    
+    NoticeTree.Source getTransactionParentSource(TransactionImportEntry entry) {
+    	NoticeTree.Source source = null;
+
+    	String accountId = entry.getAccountId();
+    	if (accountId != null) {
+    		source = this.transactionAccountSources.get(accountId);
+    		if (source == null ) {
+    			source = new TransactionAccountSource(accountId);
+    			this.transactionAccountSources.put(accountId, source);
+    		}
+    	}
+
+    	if (source == null) {
+    		return orphanTransactionAccountSources;
+    	}
+    	return source;
+    }
+    
+    
     boolean addScheduledTransactionEntry(ScheduledTransactionEntry entry) {
     	if (this.scheduledTransactionEntries.put(entry.id.id, entry) != null) {
-    		recordWarning("DuplicateScheduledTransaction", "Message.Parse.XMLDuplicateScheduledTransaction", entry.id, entry.name);
+    		recordWarning(entry, "Message.Parse.XMLDuplicateScheduledTransaction", entry.id, entry.name);
     	}
     	++this.totalScheduledTransactionEntryCount;
     	return true;
@@ -740,7 +1080,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         Integer expectedCount = this.countData.get("commodity");
         if (expectedCount != null) {
             if (expectedCount != this.commodityEntries.size()) {
-                recordWarning(null, "Message.Warning.CommodityCountMismatch", expectedCount, this.commodityEntries.size());
+                recordWarning((ParsedEntry)null, "Message.Warning.CommodityCountMismatch", expectedCount, this.commodityEntries.size());
             }
         }
 
@@ -830,7 +1170,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         Integer expectedCount = this.countData.get("account");
         if (expectedCount != null) {
             if (expectedCount != this.accountImportEntries.size()) {
-                recordWarning(null, "Message.Warning.AccountCountMismatch", expectedCount, this.accountImportEntries.size());
+                recordWarning((ParsedEntry)null, "Message.Warning.AccountCountMismatch", expectedCount, this.accountImportEntries.size());
             }
         }
 
@@ -880,7 +1220,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         Integer expectedCount = this.countData.get("transaction");
         if (expectedCount != null) {
             if (expectedCount != this.totalTransactionEntryCount) {
-                recordWarning(null, "Message.Warning.TransactionCountMismatch", expectedCount, this.totalTransactionEntryCount);
+                recordWarning((ParsedEntry)null, "Message.Warning.TransactionCountMismatch", expectedCount, this.totalTransactionEntryCount);
             }
         }
         
@@ -912,7 +1252,7 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         Integer expectedCount = this.countData.get("schedxaction");
         if (expectedCount != null) {
             if (expectedCount != this.totalScheduledTransactionEntryCount) {
-                recordWarning(null, "Message.Warning.ScheduledTransactionCountMismatch", expectedCount, this.totalScheduledTransactionEntryCount);
+                recordWarning((ParsedEntry)null, "Message.Warning.ScheduledTransactionCountMismatch", expectedCount, this.totalScheduledTransactionEntryCount);
             }
         }
         

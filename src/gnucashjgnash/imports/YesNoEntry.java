@@ -35,7 +35,7 @@ public class YesNoEntry extends ParsedEntry {
 	 */
 	protected YesNoEntry(ParsedEntry parentParsedEntry) {
 		super(null);
-		this.parentEntry = parentParsedEntry;
+		this.parentSource = parentParsedEntry;
 	}
 
 
@@ -50,7 +50,7 @@ public class YesNoEntry extends ParsedEntry {
 
 	public boolean validateParse(StateHandler stateHandler, String qName) {
 		if (this.parseError != null) {
-			stateHandler.recordWarning("YesNoValueInvalid_" + qName, "Message.Parse.XMLYesNoInvalid", qName);
+			stateHandler.recordWarningOld("YesNoValueInvalid_" + qName, "Message.Parse.XMLYesNoInvalid", qName);
 			return false;
 		}
 		
@@ -66,6 +66,15 @@ public class YesNoEntry extends ParsedEntry {
 			super(contentHandler, parentStateHandler, elementName);
 			this.yesNoEntry = yesNoEntry;
 			this.yesNoEntry.updateLocatorInfo(contentHandler);
+		}
+
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+		@Override
+		public ParsedEntry getParsedEntry() {
+			return this.yesNoEntry;
 		}
 
 		/* (non-Javadoc)

@@ -16,17 +16,24 @@
 */
 package gnucashjgnash.imports;
 
+import gnucashjgnash.NoticeTree;
+import gnucashjgnash.NoticeTree.Source;
+
 /**
  * The base class for all GnuCash parsed entries, primarily provides support for managing tracking warnings.
  * @author albert
  *
  */
-public abstract class ParsedEntry {
-	protected ParsedEntry parentEntry;
+public abstract class ParsedEntry implements NoticeTree.Source {
+	final GnuCashToJGnashContentHandler contentHandler;
+	protected Source parentSource;
 	int lineNumber;
 	int columnNumber;
+	String title;
+	String description;
 	
 	protected ParsedEntry(GnuCashToJGnashContentHandler contentHandler) {
+		this.contentHandler = contentHandler;
 		if ((contentHandler != null) && (contentHandler.documentLocator != null)) {
 			this.lineNumber = contentHandler.documentLocator.getLineNumber();
 			this.columnNumber = contentHandler.documentLocator.getColumnNumber();
@@ -49,11 +56,6 @@ public abstract class ParsedEntry {
 	}
 	
 	
-	public ParsedEntry getParentParsedEntry(GnuCashToJGnashContentHandler contentHandler) {
-		return parentEntry;
-	}
-	
-	
 	
 	/**
 	 * Retrieves the localized message text identifying the entry, what's displayed in the
@@ -68,5 +70,42 @@ public abstract class ParsedEntry {
 	 */
 	public String getUniqueId() {
 		return null;
+	}
+	
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.NoticeTree.Source#getParentSource()
+	 */
+	@Override
+	public Source getParentSource() {
+		return this.parentSource;
+	}
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.NoticeTree.Source#getSourceTitle()
+	 */
+	@Override
+	public String getSourceTitle() {
+		if (this.title == null ) {
+			this.title = getIndentifyingText(this.contentHandler);
+			if (this.title == null) {
+				this.title = toString();
+			}
+		}
+		return this.title;
+	}
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.NoticeTree.Source#getSourceDescription()
+	 */
+	@Override
+	public String getSourceDescription() {
+		if (this.description == null) {
+			String uniqueId = this.getUniqueId();
+			if ((uniqueId != null) && !uniqueId.isEmpty()) {
+				this.description = uniqueId;
+			}
+		}
+		return this.description;
 	}
 }

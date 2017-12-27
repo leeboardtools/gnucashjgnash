@@ -35,7 +35,7 @@ public class IntEntry extends ParsedEntry {
 	 */
 	protected IntEntry(ParsedEntry parentParsedEntry) {
 		super(null);
-		this.parentEntry = parentParsedEntry;
+		this.parentSource = parentParsedEntry;
 	}
 
 
@@ -50,7 +50,7 @@ public class IntEntry extends ParsedEntry {
 
 	public boolean validateParse(StateHandler stateHandler, String qName) {
 		if (this.parseError != null) {
-			stateHandler.recordWarning("IntValueInvalid_" + qName, "Message.Parse.XMLIntValueInvalid", qName);
+			stateHandler.recordWarningOld("IntValueInvalid_" + qName, "Message.Parse.XMLIntValueInvalid", qName);
 			return false;
 		}
 		return true;
@@ -67,7 +67,17 @@ public class IntEntry extends ParsedEntry {
 			this.intEntry.updateLocatorInfo(contentHandler);
 		}
 
+        
 		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	return this.intEntry;
+        }
+
+        
+        /* (non-Javadoc)
 		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#endState()
 		 */
 		@Override

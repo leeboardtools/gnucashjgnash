@@ -42,7 +42,7 @@ public class SplitEntry extends ParsedEntry {
     String memo;
     String action;
     String reconciledState;
-    TimeEntry reconcileDate = new TimeEntry();
+    TimeEntry reconcileDate = new TimeEntry(this);
     NumericEntry value = new NumericEntry(this);
     NumericEntry quantity = new NumericEntry(this);
     IdEntry account = new IdEntry(this);
@@ -59,7 +59,7 @@ public class SplitEntry extends ParsedEntry {
 	 */
 	protected SplitEntry(GnuCashToJGnashContentHandler contentHandler, TransactionImportEntry parentEntry) {
 		super(contentHandler);
-		this.parentEntry = parentEntry;
+		this.parentSource = parentEntry;
 	}
 	
 
@@ -99,14 +99,14 @@ public class SplitEntry extends ParsedEntry {
         if (this.jGnashAccount == null) {
             this.jGnashSecurity = contentHandler.jGnashSecuritiesByStockAccountId.get(this.account.id);
             if (this.jGnashSecurity == null) {
-                contentHandler.recordWarning("SplitAccountMissing_" + this.account.id, "Message.Warning.SplitAccountMissing", this.id.id, this.account.id);
+                contentHandler.recordWarning(this.parentSource, "Message.Warning.SplitAccountMissing", this.id.id, this.account.id);
                 return false;
             }
             else {
                 AccountImportEntry accountEntry = contentHandler.accountImportEntries.get(this.account.id);
                 this.jGnashAccount = contentHandler.jGnashAccounts.get(accountEntry.parentId.id);
                 if (this.jGnashAccount == null) {
-                    contentHandler.recordWarning("SplitSecurityAccountParentMissing_" + this.account.id, "Message.Warning.SplitSecurityAccountParentMissing", this.id.id, this.account.id);
+                    contentHandler.recordWarning(this.parentSource, "Message.Warning.SplitSecurityAccountParentMissing", this.id.id, this.account.id);
                     return false;
                 }
             }
@@ -131,7 +131,7 @@ public class SplitEntry extends ParsedEntry {
             break;
             
         default :
-            contentHandler.recordWarning("SplitReconciledStateNotSupported_" + this.reconciledState, "Message.Warning.SplitReconciledStateNotSupported",
+            contentHandler.recordWarning(this.parentSource, "Message.Warning.SplitReconciledStateNotSupported",
                     this.id.id, this.reconciledState);
             return false;
         }
@@ -160,6 +160,14 @@ public class SplitEntry extends ParsedEntry {
             this.splitElementName = splitElementName;
             this.parentTransactionImportEntry = parentTransactionImportEntry;
         }
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+		@Override
+		public ParsedEntry getParsedEntry() {
+			return this.parentTransactionImportEntry;
+		}
         
         /* (non-Javadoc)
          * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
@@ -197,6 +205,14 @@ public class SplitEntry extends ParsedEntry {
             this.splitEntriesList = splitEntriesList;
             this.splitEntry = new SplitEntry(contentHandler, parentTransactionImportEntry);
         }
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+		@Override
+		public ParsedEntry getParsedEntry() {
+			return this.splitEntry;
+		}
 
         /* (non-Javadoc)
          * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
@@ -261,7 +277,7 @@ public class SplitEntry extends ParsedEntry {
                 return;
             }
             if (this.splitEntry.reconciledState == null) {
-                recordWarning("SplitReconciledStateMissing", "Message.Parse.XMLSplitReconciledStateMissing", this.elementName, "split:reconciled-state");
+                recordWarning("Message.Parse.XMLSplitReconciledStateMissing", this.elementName, "split:reconciled-state");
                 return;
             }
             if (!this.splitEntry.value.validateParse(this, "split:value")) {
@@ -275,7 +291,7 @@ public class SplitEntry extends ParsedEntry {
             }
             
             if (this.splitEntries.put(this.splitEntry.id.id, this.splitEntry) != null) {
-                recordWarning("DuplicateSplitEntries", "Message.Parse.XMLDuplicateSplitEntries", this.splitEntry.id.id);
+                recordWarning("Message.Parse.XMLDuplicateSplitEntries", this.splitEntry.id.id);
             }
             if (this.splitEntriesList != null) {
                 this.splitEntriesList.add(this.splitEntry);

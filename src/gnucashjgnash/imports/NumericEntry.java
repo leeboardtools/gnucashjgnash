@@ -35,7 +35,7 @@ public class NumericEntry extends ParsedEntry {
 	 */
 	protected NumericEntry(ParsedEntry parentParsedEntry) {
 		super(null);
-		this.parentEntry = parentParsedEntry;
+		this.parentSource = parentParsedEntry;
 	}
 
     
@@ -66,6 +66,15 @@ public class NumericEntry extends ParsedEntry {
             this.numericEntry.updateLocatorInfo(contentHandler);
         }
 
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	return this.numericEntry;
+        }
+
         @Override
         protected void endState() {
             super.endState();
@@ -75,7 +84,7 @@ public class NumericEntry extends ParsedEntry {
 
             int dividerIndex = this.characters.indexOf('/');
             if (dividerIndex < 0) {
-                recordWarning("NumericValueMissingDiv_" + this.elementName, "Message.Parse.XMLNumericDividerMissing", this.elementName);
+                recordWarningOld("NumericValueMissingDiv_" + this.elementName, "Message.Parse.XMLNumericDividerMissing", this.elementName);
                 return;
             }
 
@@ -88,7 +97,7 @@ public class NumericEntry extends ParsedEntry {
                 this.numericEntry.scale = (int)Math.round(Math.log10(this.numericEntry.denominator.intValue()));
             }
             catch (NumberFormatException e) {
-                recordWarning("NumericValueInvalid_" + this.elementName, "Message.Parse.XMLNumericValueInvalid", this.elementName);
+                recordWarningOld("NumericValueInvalid_" + this.elementName, "Message.Parse.XMLNumericValueInvalid", this.elementName);
             }
         }
     }

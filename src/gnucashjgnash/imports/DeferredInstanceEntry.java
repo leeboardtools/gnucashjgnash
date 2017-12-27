@@ -36,7 +36,7 @@ public class DeferredInstanceEntry extends ParsedEntry {
 	 */
 	protected DeferredInstanceEntry(GnuCashToJGnashContentHandler contentHandler, ParsedEntry parentParsedEntry) {
 		super(contentHandler);
-		this.parentEntry = parentParsedEntry;
+		this.parentSource = parentParsedEntry;
 	}
 
 
@@ -86,7 +86,17 @@ public class DeferredInstanceEntry extends ParsedEntry {
 			deferredInstanceEntry.updateLocatorInfo(contentHandler);
 		}
 
+        
 		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	return this.deferredInstanceEntry;
+        }
+        
+
+        /* (non-Javadoc)
 		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
 		 */
 		@Override

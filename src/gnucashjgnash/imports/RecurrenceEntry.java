@@ -44,7 +44,7 @@ public class RecurrenceEntry extends ParsedEntry {
 	 */
 	protected RecurrenceEntry(GnuCashToJGnashContentHandler contentHandler, ParsedEntry parentParsedEntry) {
 		super(contentHandler);
-		this.parentEntry = parentParsedEntry;
+		this.parentSource = parentParsedEntry;
 	}
 
 
@@ -81,6 +81,14 @@ public class RecurrenceEntry extends ParsedEntry {
 			this.recurrenceEntries = recurrenceEntries;
 			this.parentParsedEntry = parentParsedEntry;
 		}
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	return this.parentParsedEntry;
+        }
 
 		/* (non-Javadoc)
 		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
@@ -117,6 +125,14 @@ public class RecurrenceEntry extends ParsedEntry {
 			super(contentHandler, parentStateHandler, elementName);
 			this.recurrenceEntry = recurrenceEntry;
 		}
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	return this.recurrenceEntry;
+        }
 
 		/* (non-Javadoc)
 		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractVersionStateHandler#validateVersion(java.lang.String)

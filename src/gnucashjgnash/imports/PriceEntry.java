@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import gnucashjgnash.GnuCashConvertUtil;
+import gnucashjgnash.NoticeTree.Source;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 
 /**
@@ -35,19 +36,11 @@ public class PriceEntry extends ParsedEntry {
 	IdEntry id = new IdEntry(this);
     CommodityEntry.CommodityRef commodityRef = new CommodityEntry.CommodityRef();
     CommodityEntry.CurrencyRef currencyRef = new CommodityEntry.CurrencyRef();
-    TimeEntry time = new TimeEntry();
+    TimeEntry time = new TimeEntry(this);
     String source;
     String type;
     NumericEntry value = new NumericEntry(this);
 
-    static ParsedEntry orphanParsedParentEntry = new ParsedEntry(null) {
-
-		@Override
-		public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
-			return GnuCashConvertUtil.getString("Message.ParsedEntry.OrphanedPriceEntryParent");
-		}
-    	
-    };
 
     /**
 	 * @param contentHandler
@@ -58,19 +51,11 @@ public class PriceEntry extends ParsedEntry {
 
 
     /* (non-Javadoc)
-	 * @see gnucashjgnash.imports.ParsedEntry#getParentParsedEntry(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 * @see gnucashjgnash.imports.ParsedEntry#getParentSource()
 	 */
 	@Override
-	public ParsedEntry getParentParsedEntry(GnuCashToJGnashContentHandler contentHandler) {
-		if (this.commodityRef.isParsed()) {
-			CommodityEntry commodityEntry = contentHandler.commodityEntries.get(this.commodityRef.id);
-			if (commodityEntry != null) {
-				return commodityEntry;
-			}
-		}
-		else if (this.currencyRef.isParsed()) {
-		}
-		return orphanParsedParentEntry;
+	public Source getParentSource() {
+		return this.contentHandler.getPriceParentSource(this);
 	}
 
 
@@ -81,7 +66,7 @@ public class PriceEntry extends ParsedEntry {
 	@Override
 	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
 		if (time.isParsed()) {
-			return time.toString();
+			return time.toDateString();
 		}
 		return null;
 	}
@@ -103,6 +88,16 @@ public class PriceEntry extends ParsedEntry {
         PriceDBStateHandler(GnuCashToJGnashContentHandler contentHandler, GnuCashToJGnashContentHandler.StateHandler parentStateHandler,
                             String elementName) {
             super(contentHandler, parentStateHandler, elementName);
+        }
+
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	// TODO Implement a ParsedEntry for this???
+        	return null;
         }
 
         @Override
@@ -132,6 +127,15 @@ public class PriceEntry extends ParsedEntry {
                           String elementName) {
             super(contentHandler, parentStateHandler, elementName);
             this.priceEntry = new PriceEntry(contentHandler);
+        }
+
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	return this.priceEntry;
         }
 
         @Override
@@ -212,7 +216,7 @@ public class PriceEntry extends ParsedEntry {
         if (securityNode == null) {
             securityNode = contentHandler.jGnashSecurities.get(this.commodityRef.id);
             if (securityNode == null) {
-                contentHandler.recordWarning("PriceCommodityMissing_" + this.commodityRef.id, "Message.Warning.PriceCommodityMissing", this.commodityRef.id);
+                contentHandler.recordWarning(this, "Message.Warning.PriceCommodityMissing", this.commodityRef.id);
                 return true;
             }
         }
@@ -223,7 +227,7 @@ public class PriceEntry extends ParsedEntry {
             price = this.value.toBigDecimal();
         }
         catch (Exception e) {
-            contentHandler.recordWarning("SecurityHistoryPriceInvalid_" + this.commodityRef.id, "Message.Warning.SecurityHistoryValueInvalid", this.commodityRef.id);
+            contentHandler.recordWarning(this, "Message.Warning.SecurityHistoryValueInvalid");
             return true;
         }
         

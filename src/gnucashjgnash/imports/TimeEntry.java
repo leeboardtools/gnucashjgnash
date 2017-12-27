@@ -29,14 +29,30 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
  * @author albert
  *
  */
-public class TimeEntry {
-    LocalDate localDate = LocalDate.now();
+public class TimeEntry extends ParsedEntry {
+	LocalDate localDate = LocalDate.now();
     OffsetTime offsetTime = OffsetTime.now();
     int zoneOffset;
     boolean isParsed;
     String parseError = null;
 
     static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss ZZ");
+
+    /**
+	 * @param contentHandler
+	 */
+	protected TimeEntry(ParsedEntry parentParsedEntry) {
+		super(null);
+		this.parentSource = parentParsedEntry;
+	}
+
+	/* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
+	 */
+	@Override
+	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
+		return null;
+	}
 
 
     public static class TimeStateHandler extends GnuCashToJGnashContentHandler.AbstractStateHandler {
@@ -46,7 +62,16 @@ public class TimeEntry {
                      String elementName) {
             super(contentHandler, parentStateHandler, elementName);
             this.timeEntry = timeEntry;
+            this.timeEntry.updateLocatorInfo(contentHandler);
         }
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+		@Override
+		public ParsedEntry getParsedEntry() {
+			return this.timeEntry;
+		}
 
         /* (non-Javadoc)
          * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
@@ -89,7 +114,7 @@ public class TimeEntry {
 
     boolean validateParse(GnuCashToJGnashContentHandler.StateHandler stateHandler, String qName) {
         if (this.parseError != null) {
-            stateHandler.recordWarning("TimeParseError_" + qName, "Message.Parse.XMLTimeParseError", qName, this.parseError);
+            stateHandler.recordWarningOld("TimeParseError_" + qName, "Message.Parse.XMLTimeParseError", qName, this.parseError);
             return false;
         }
         return true;

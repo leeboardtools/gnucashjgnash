@@ -40,7 +40,7 @@ public class SlotEntry extends ParsedEntry {
 
 	protected SlotEntry(GnuCashToJGnashContentHandler contentHandler, ParsedEntry parentParsedEntry) {
 		super(contentHandler);
-		this.parentEntry = parentParsedEntry;
+		this.parentSource = parentParsedEntry;
 	}
 
 
@@ -83,7 +83,16 @@ public class SlotEntry extends ParsedEntry {
             this.parentParsedEntry = parentParsedEntry;
         }
         
-        /* (non-Javadoc)
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+		@Override
+		public ParsedEntry getParsedEntry() {
+			return this.parentParsedEntry;
+		}
+
+		/* (non-Javadoc)
          * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
          */
         @Override
@@ -116,6 +125,14 @@ public class SlotEntry extends ParsedEntry {
             this.slotEntry = new SlotEntry(contentHandler, parentParsedEntry);
         }
 
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+		@Override
+		public ParsedEntry getParsedEntry() {
+			return this.slotEntry;
+		}
+
         /* (non-Javadoc)
          * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
          */
@@ -141,17 +158,17 @@ public class SlotEntry extends ParsedEntry {
             super.endState();
 
             if (this.slotEntry.key == null) {
-                recordWarning("SlotKeyMissing", "Message.Parse.XMLSlotKeyMissing", this.elementName);
+                recordWarningOld("SlotKeyMissing", "Message.Parse.XMLSlotKeyMissing", this.elementName);
                 return;
             }
             if (this.slotEntry.valueType == null) {
-                recordWarning("SlotValueTypeMissing", "Message.Parse.XMLSlotValueTypeMissing",
+                recordWarningOld("SlotValueTypeMissing", "Message.Parse.XMLSlotValueTypeMissing",
                         this.elementName, this.slotEntry.key, "slot:value");
                 return;
             }
 
             if (this.slotEntries.put(this.slotEntry.key, this.slotEntry) != null) {
-                recordWarning("DuplicateSlotKey", "Message.Parse.XMLDuplicateSlotKey", this.elementName, this.slotEntry.key);
+                recordWarningOld("DuplicateSlotKey", "Message.Parse.XMLDuplicateSlotKey", this.elementName, this.slotEntry.key);
             }
         }
     }
@@ -187,7 +204,16 @@ public class SlotEntry extends ParsedEntry {
             this.slotEntry = slotEntry;
         }
 
-        /* (non-Javadoc)
+
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+		@Override
+		public ParsedEntry getParsedEntry() {
+			return this.slotEntry;
+		}
+
+		/* (non-Javadoc)
          * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#handleStateAttributes(org.xml.sax.Attributes)
          */
         @Override
@@ -203,7 +229,7 @@ public class SlotEntry extends ParsedEntry {
         protected StateHandler getStateHandlerForElement(String qName) {
             switch (this.slotEntry.valueType) {
                 case "timespec" :
-                    this.slotEntry.timeEntryValue = new TimeEntry();
+                    this.slotEntry.timeEntryValue = new TimeEntry(this.slotEntry);
                     return new TimeEntry.TimeStateHandler(this.slotEntry.timeEntryValue, this.contentHandler, this, qName);
                     
                 case "gdate" :

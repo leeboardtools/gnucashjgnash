@@ -89,6 +89,15 @@ public class CommodityEntry extends ParsedEntry {
             this.commodityEntry = new CommodityEntry(contentHandler);
         }
 
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	return this.commodityEntry;
+        }
+
         @Override
         protected boolean validateVersion(String version) {
             if (!version.equals("2.0.0")) {
@@ -184,12 +193,12 @@ public class CommodityEntry extends ParsedEntry {
             }
 
             if (this.commodityEntry.space == null) {
-                recordWarning("CommodityMissingSpace", "Message.Parse.XMLCommodityMissingSpace", this.commodityEntry.id, "cmdty:space");
+                recordWarningOld("CommodityMissingSpace", "Message.Parse.XMLCommodityMissingSpace", this.commodityEntry.id, "cmdty:space");
                 return;
             }
 
             if (this.commodityEntry.id == null) {
-                recordWarning("CommodityMissingId", "Message.Parse.XMLCommodityMissingId", this.commodityEntry.space, "cmdty:id");
+                recordWarningOld("CommodityMissingId", "Message.Parse.XMLCommodityMissingId", this.commodityEntry.space, "cmdty:id");
                 return;
             }
 
@@ -197,13 +206,13 @@ public class CommodityEntry extends ParsedEntry {
 
             if (!this.commodityEntry.isCurrency) {
                 if (this.commodityEntry.fraction == null) {
-                    recordWarning("CommodityMissingFraction", "Message.Parse.XMLCommodityMissingFraction", this.commodityEntry.id, "cmdty:fraction");
+                    recordWarningOld("CommodityMissingFraction", "Message.Parse.XMLCommodityMissingFraction", this.commodityEntry.id, "cmdty:fraction");
                     return;
                 }
             }
 
             if (this.contentHandler.commodityEntries.put(this.commodityEntry.id, this.commodityEntry) != null) {
-                recordWarning("DuplicateCommodityId", "Message.Parse.XMLDuplicateCommodityId", this.commodityEntry.id);
+                recordWarningOld("DuplicateCommodityId", "Message.Parse.XMLDuplicateCommodityId", this.commodityEntry.id);
             }
         }
     }
@@ -232,11 +241,11 @@ public class CommodityEntry extends ParsedEntry {
 
         boolean validateRef(GnuCashToJGnashContentHandler.StateHandler stateHandler, String qName) {
             if (this.space == null) {
-                stateHandler.recordWarning("CommodityRefMissingSpace_" + qName, "Message.Parse.XMLCommodityRefMissingElement", qName, "cmdty:space");
+                stateHandler.recordWarningOld("CommodityRefMissingSpace_" + qName, "Message.Parse.XMLCommodityRefMissingElement", qName, "cmdty:space");
                 return false;
             }
             if (this.id == null) {
-                stateHandler.recordWarning("CommodityRefMissingId_" + qName, "Message.Parse.XMLCommodityRefMissingElement", qName, "cmdty:id");
+                stateHandler.recordWarningOld("CommodityRefMissingId_" + qName, "Message.Parse.XMLCommodityRefMissingElement", qName, "cmdty:id");
                 return false;
             }
             return true;
@@ -260,6 +269,16 @@ public class CommodityEntry extends ParsedEntry {
             this.commodityRef = commodityRef;
         }
         
+        
+		/* (non-Javadoc)
+		 * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler#getParsedEntry()
+		 */
+        @Override
+        public ParsedEntry getParsedEntry() {
+        	// TODO Change CommodityRef to implement ParsedEntry, return the commodity ref here.
+        	return null;
+        }
+
         /* (non-Javadoc)
          * @see gnucashjgnash.imports.GnuCashToJGnashContentHandler.AbstractStateHandler#getStateHandlerForElement(java.lang.String)
          */
@@ -354,7 +373,7 @@ public class CommodityEntry extends ParsedEntry {
                     break;
 
                 default :
-                    contentHandler.recordWarning("QuoteSourceNotSupported_" + this.quoteSource, "Message.Warning.QuoteSourceNotSupported", this.quoteSource);
+                    contentHandler.recordWarningOld("QuoteSourceNotSupported_" + this.quoteSource, "Message.Warning.QuoteSourceNotSupported", this.quoteSource);
             }
         }
 
