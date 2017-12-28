@@ -1,4 +1,4 @@
-This is a jGnash (https://sourceforge.net/projects/jgnash/) plugin for a **Fairly Simple** Gnucash (http://gnucash.org/) database into an equivalent jGnash database.
+This is a jGnash (https://sourceforge.net/projects/jgnash/) plugin for converting a *Fairly Simple* Gnucash (http://gnucash.org/) database into an equivalent jGnash database.
 
 This has only been tested on GnuCash V 2.6.17/2.6.18 and jGnash 2.33.3, with the testing primarily consisting
 of converting my personal GnuCash database into jGnash and verifying the account balances and scheduled transactions.
@@ -57,6 +57,7 @@ https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc
     - If both the credit and debit sides of a transaction entry pair have a memo, the memo for the credit side is the one used.
 	
 - Investment transactions:
+    - Lots are ignored.
     - Reinvested dividends:
 	   Reinvested dividends in investments are detected by a transaction where one account is an investment or mutual fund account and
 	   the other account is an income account. The transaction is entered as two transactions:
@@ -69,7 +70,7 @@ https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc
     - Semi-monthly transactions are converted to two separate transactions.
     - End of month transactions are treated as month transactions. The number of days from the end of the month is lost.
     - Reinvested dividends are not supported (they require 2 transactions, but the jGnash Reminder class only supports 1).
-    - The last date is not transferred, so make sure your GnuCash database is up to date before transferring.
+    - The last date is not transferred directly, so it's best to make sure your GnuCash database is up to date before transferring.
     - Reminders are only generated for scheduled transactions that have a template transaction.
     - The 'except on weekends' setting is currently ignored, for the end of month it's always set to the last valid day of
     the month.
