@@ -90,7 +90,11 @@ public class TransactionImportEntry extends ParsedEntry {
 		}
 		
 		if (this.datePosted.isParsed()) {
-			return this.datePosted.toDateString();
+			String text = this.datePosted.toDateString();
+			if (this.description != null) {
+				text += ": " + this.description;
+			}
+			return text;
 		}
 		return this.description;
 	}

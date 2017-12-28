@@ -57,7 +57,7 @@ public class GDateEntry extends ParsedEntry {
     
     public boolean validateParse(StateHandler stateHandler, String qName) {
     	if (this.parseError != null) {
-            stateHandler.recordWarningOld("GDateParseError_" + qName, "Message.Parse.XMLGDateParseError", qName, this.parseError);
+            stateHandler.recordWarning("Message.Parse.XMLGDateParseError", qName, this.parseError);
     		return false;
     	}
     	return true;

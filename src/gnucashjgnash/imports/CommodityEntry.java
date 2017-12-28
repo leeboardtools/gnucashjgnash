@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import gnucashjgnash.GnuCashConvertUtil;
+import gnucashjgnash.NoticeTree.Source;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 
@@ -57,6 +58,16 @@ public class CommodityEntry extends ParsedEntry {
     
 
     /* (non-Javadoc)
+	 * @see gnucashjgnash.imports.ParsedEntry#getParentSource()
+	 */
+	@Override
+	public Source getParentSource() {
+		return this.contentHandler.getCommodityParentSource(this);
+	}
+
+
+
+	/* (non-Javadoc)
 	 * @see gnucashjgnash.imports.ParsedEntry#getIndentifyingText(gnucashjgnash.imports.GnuCashToJGnashContentHandler)
 	 */
 	@Override
@@ -193,12 +204,12 @@ public class CommodityEntry extends ParsedEntry {
             }
 
             if (this.commodityEntry.space == null) {
-                recordWarningOld("CommodityMissingSpace", "Message.Parse.XMLCommodityMissingSpace", this.commodityEntry.id, "cmdty:space");
+                recordWarning("Message.Parse.XMLCommodityMissingSpace", this.commodityEntry.id, "cmdty:space");
                 return;
             }
 
             if (this.commodityEntry.id == null) {
-                recordWarningOld("CommodityMissingId", "Message.Parse.XMLCommodityMissingId", this.commodityEntry.space, "cmdty:id");
+                recordWarning("Message.Parse.XMLCommodityMissingId", this.commodityEntry.space, "cmdty:id");
                 return;
             }
 
@@ -206,13 +217,13 @@ public class CommodityEntry extends ParsedEntry {
 
             if (!this.commodityEntry.isCurrency) {
                 if (this.commodityEntry.fraction == null) {
-                    recordWarningOld("CommodityMissingFraction", "Message.Parse.XMLCommodityMissingFraction", this.commodityEntry.id, "cmdty:fraction");
+                    recordWarning("Message.Parse.XMLCommodityMissingFraction", this.commodityEntry.id, "cmdty:fraction");
                     return;
                 }
             }
 
             if (this.contentHandler.commodityEntries.put(this.commodityEntry.id, this.commodityEntry) != null) {
-                recordWarningOld("DuplicateCommodityId", "Message.Parse.XMLDuplicateCommodityId", this.commodityEntry.id);
+                recordWarning("Message.Parse.XMLDuplicateCommodityId", this.commodityEntry.id);
             }
         }
     }
@@ -241,11 +252,11 @@ public class CommodityEntry extends ParsedEntry {
 
         boolean validateRef(GnuCashToJGnashContentHandler.StateHandler stateHandler, String qName) {
             if (this.space == null) {
-                stateHandler.recordWarningOld("CommodityRefMissingSpace_" + qName, "Message.Parse.XMLCommodityRefMissingElement", qName, "cmdty:space");
+                stateHandler.recordWarning("Message.Parse.XMLCommodityRefMissingElement", qName, "cmdty:space");
                 return false;
             }
             if (this.id == null) {
-                stateHandler.recordWarningOld("CommodityRefMissingId_" + qName, "Message.Parse.XMLCommodityRefMissingElement", qName, "cmdty:id");
+                stateHandler.recordWarning("Message.Parse.XMLCommodityRefMissingElement", qName, "cmdty:id");
                 return false;
             }
             return true;
@@ -373,7 +384,8 @@ public class CommodityEntry extends ParsedEntry {
                     break;
 
                 default :
-                    contentHandler.recordWarningOld("QuoteSourceNotSupported_" + this.quoteSource, "Message.Warning.QuoteSourceNotSupported", this.quoteSource);
+                    contentHandler.recordWarning(this, "Message.Warning.QuoteSourceNotSupported", this.quoteSource);
+                    break;
             }
         }
 

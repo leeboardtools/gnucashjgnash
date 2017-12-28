@@ -50,7 +50,7 @@ public class IntEntry extends ParsedEntry {
 
 	public boolean validateParse(StateHandler stateHandler, String qName) {
 		if (this.parseError != null) {
-			stateHandler.recordWarningOld("IntValueInvalid_" + qName, "Message.Parse.XMLIntValueInvalid", qName);
+			stateHandler.recordWarning("Message.Parse.XMLIntValueInvalid", qName, this.parseError);
 			return false;
 		}
 		return true;

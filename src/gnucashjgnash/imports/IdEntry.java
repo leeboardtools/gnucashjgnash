@@ -84,11 +84,11 @@ public class IdEntry extends ParsedEntry {
 
     boolean validateGUIDParse(GnuCashToJGnashContentHandler.StateHandler stateHandler, String qName) {
         if (this.type == null) {
-            stateHandler.recordWarningOld("IdTypeMissing_" + qName, "Message.Parse.XMLIdMissingType", qName, "type");
+            stateHandler.recordWarning("Message.Parse.XMLIdMissingType", qName, "type");
             return false;
         }
         if (!"guid".equals(this.type)) {
-            stateHandler.recordWarningOld("IdTypeInvalid_" + qName, "Message.Parse.XMLIdTypeNotGUID", qName, "type", "guid");
+            stateHandler.recordWarning("Message.Parse.XMLIdTypeNotGUID", qName, "type", "guid");
             return false;
         }
         return true;

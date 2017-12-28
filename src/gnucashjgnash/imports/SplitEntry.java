@@ -79,7 +79,7 @@ public class SplitEntry extends ParsedEntry {
 			return GnuCashConvertUtil.getString("Message.ParsedEntry.SplitEntryMemo", this.memo);
 		}
 		
-		return this.memo;
+		return GnuCashConvertUtil.getString("Message.ParsedEntry.SplitEntryId", this.id.id);
 	}
 
 
@@ -114,6 +114,10 @@ public class SplitEntry extends ParsedEntry {
         else {
             if (this.jGnashAccount.memberOf(AccountGroup.INVEST)) {
                 this.jGnashSecurity = contentHandler.jGnashSecuritiesByStockAccountId.get(this.account.id);
+                if (this.jGnashSecurity == null) {
+                	contentHandler.recordWarning(this.parentSource, "Message.Warning.SplitSecurityAccountMissing", this.id.id, this.account.id);
+                	return false;
+                }
             }
         }
         

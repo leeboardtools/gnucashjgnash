@@ -65,6 +65,26 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     final Map<String, SlotEntry> bookSlots = new HashMap<>();
 
     final Map<String, CommodityEntry> commodityEntries = new HashMap<>();
+    final Map<String, NoticeTree.Source> commoditySources = new HashMap<>();
+    final NoticeTree.Source commoditySourcesRoot = new NoticeTree.Source() {
+
+		@Override
+		public Source getParentSource() {
+			return null;
+		}
+
+		@Override
+		public String getSourceTitle() {
+			return GnuCashConvertUtil.getString("Message.Notice.CommoditiesRoot");
+		}
+
+		@Override
+		public String getSourceDescription() {
+			return null;
+		}
+    };
+    
+    
     final Map<String, SecurityNode> jGnashSecurities = new HashMap<>();
     final Map<String, CurrencyNode> jGnashCurrencies = new HashMap<>();
 
@@ -170,13 +190,11 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 		
 		@Override
 		public String getSourceDescription() {
-			// TODO Auto-generated method stub
 			return null;
 		}
 		
 		@Override
 		public Source getParentSource() {
-			// TODO Auto-generated method stub
 			return null;
 		}
 	};
@@ -187,7 +205,27 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     final Map<String, ScheduledTransactionEntry> scheduledTransactionEntries = new HashMap<>();
     int totalScheduledTransactionEntryCount;
 
-    final NoticeTree warningNoticeTree = new NoticeTree();
+    final Map<String, NoticeTree.Source> scheduledTransactionAccountSources = new HashMap<>();
+    final NoticeTree.Source scheduledTransactionSourcesRoot = new NoticeTree.Source() {
+
+		@Override
+		public Source getParentSource() {
+			return null;
+		}
+
+		@Override
+		public String getSourceTitle() {
+			return GnuCashConvertUtil.getString("Message.Notice.ScheduledTransactionsRoot");
+		}
+
+		@Override
+		public String getSourceDescription() {
+			return null;
+		}
+    };
+    
+
+	final NoticeTree warningNoticeTree = new NoticeTree();
     
     final Set<String> recordedWarningMsgIds = new HashSet<>();
     final List<String> recordedWarnings = new ArrayList<>();
@@ -300,7 +338,6 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
 
         void stateHandlerReactivated();
 
-        void recordWarningOld(String msgId, String key, Object ... arguments);
         void recordWarning(String key, Object ...arguments);
         
         GnuCashToJGnashContentHandler getContentHandler();
@@ -367,11 +404,6 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         }
         
         protected void endState() {
-        }
-
-        @Override
-        public void recordWarningOld(String msgId, String key, Object ... arguments) {
-            this.contentHandler.recordWarningOld(msgId, key, arguments);
         }
 
         @Override
@@ -802,17 +834,15 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         this.warningNoticeTree.addNotice(source, msg, null);
     }
 
-    void recordWarningOld(String id, String key, Object ... arguments) {
-        if (!this.recordedWarningMsgIds.contains(id)) {
-            String msg = GnuCashConvertUtil.getString(key, arguments);
-            this.recordedWarnings.add(msg);
-            LOG.warning(msg);
-        }
-    }
-
     void recordError(String key, Object ... arguments) {
         this.errorMsg = GnuCashConvertUtil.getString(key, arguments);
     }
+
+    
+    NoticeTree.Source getCommodityParentSource(CommodityEntry entry) {
+    	return this.commoditySourcesRoot;
+    }
+    
     
     boolean addPriceEntry(PriceEntry priceEntry) {
         String securityId = priceEntry.commodityRef.id;
@@ -1030,6 +1060,11 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
     	++this.totalScheduledTransactionEntryCount;
     	return true;
     }
+    
+    NoticeTree.Source getScheduledTransactionParentSource(ScheduledTransactionEntry entry) {
+    	return this.scheduledTransactionSourcesRoot;
+    }
+
     
     
     /**

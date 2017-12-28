@@ -50,7 +50,7 @@ public class YesNoEntry extends ParsedEntry {
 
 	public boolean validateParse(StateHandler stateHandler, String qName) {
 		if (this.parseError != null) {
-			stateHandler.recordWarningOld("YesNoValueInvalid_" + qName, "Message.Parse.XMLYesNoInvalid", qName);
+			stateHandler.recordWarning("Message.Parse.XMLYesNoInvalid", qName);
 			return false;
 		}
 		

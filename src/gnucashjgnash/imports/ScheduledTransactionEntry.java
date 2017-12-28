@@ -68,16 +68,6 @@ public class ScheduledTransactionEntry extends ParsedEntry {
 	Map<String, SlotEntry> slots = new HashMap<>();
 
 
-    static ParsedEntry rootParsedParentEntry = new ParsedEntry(null) {
-
-		@Override
-		public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
-			return GnuCashConvertUtil.getString("Message.ParsedEntry.RootScheduledTransactionEntryParent");
-		}
-    	
-    };
-	
-	
 	/**
 	 * @param contentHandler
 	 */
@@ -92,7 +82,7 @@ public class ScheduledTransactionEntry extends ParsedEntry {
 	 */
 	@Override
 	public Source getParentSource() {
-		return rootParsedParentEntry;
+		return this.contentHandler.getScheduledTransactionParentSource(this);
 	}
 
 
@@ -330,13 +320,13 @@ public class ScheduledTransactionEntry extends ParsedEntry {
     	for (SplitEntry splitEntry : transactionEntry.originalSplitsList) {
     		AccountImportEntry splitAccountImportEntry = contentHandler.templateAccountImportEntries.get(splitEntry.account.id);
     		if (splitAccountImportEntry == null) {
-    			contentHandler.recordWarningOld("TemplateTransactionSplitAccountMissing", "Message.Warning.TemplateTransactionSplitAccountMissing", 
+    			contentHandler.recordWarning(transactionEntry, "Message.Warning.TemplateTransactionSplitAccountMissing", 
     					splitEntry.id.id, splitEntry.account.id);
     			return true;
     		}
     		else if (accountImportEntry != null) {
     			if (splitAccountImportEntry != accountImportEntry) {
-    				contentHandler.recordWarningOld("TemplateTransactionSplitAccountsDifferent", "Message.Warning.TemplateTransactionSplitAccountsDifferent", 
+    				contentHandler.recordWarning(transactionEntry, "Message.Warning.TemplateTransactionSplitAccountsDifferent", 
         					transactionEntry.id.id);
     				return true;
     			}
@@ -408,16 +398,16 @@ public class ScheduledTransactionEntry extends ParsedEntry {
     		GnuCashToJGnashContentHandler contentHandler) {
     	SlotEntry slotEntry = originalSplitEntry.slots.get("sched-xaction");
     	if (slotEntry == null) {
-    		contentHandler.recordWarningOld("SchedXActionSlotMissing", "Message.Warning.SchedXActionSlotMissing", originalSplitEntry.id.id);
+    		contentHandler.recordWarning(originalSplitEntry, "Message.Warning.SchedXActionSlotMissing", originalSplitEntry.id.id);
     		return false;
     	}
     	if (slotEntry.frameSlotEntries == null) {
-    		contentHandler.recordWarningOld("SchedXActionSlotNotFrame", "Message.Warning.SchedXActionSlotNotFrame", originalSplitEntry.id.id);
+    		contentHandler.recordWarning(originalSplitEntry, "Message.Warning.SchedXActionSlotNotFrame", originalSplitEntry.id.id);
     		return false;
     	}
     	SlotEntry accountSlotEntry = slotEntry.frameSlotEntries.get("account");
     	if (accountSlotEntry == null) {
-    		contentHandler.recordWarningOld("SchedXActionSlotMissingAccount", "Message.Warning.SchedXActionSlotMissingAccount", originalSplitEntry.id.id);
+    		contentHandler.recordWarning(originalSplitEntry, "Message.Warning.SchedXActionSlotMissingAccount", originalSplitEntry.id.id);
     		return false;
     	}
     	
@@ -432,7 +422,7 @@ public class ScheduledTransactionEntry extends ParsedEntry {
     			normalSplitEntry.value.numerator = normalSplitEntry.value.numerator.negate(); 
     		}
     		catch (NumberFormatException e) {
-        		contentHandler.recordWarningOld("SchedXActionSlotCreditFormulaValueInvalid", "Message.Warning.SchedXActionSlotCreditFormulaValueInvalid", 
+        		contentHandler.recordWarning(originalSplitEntry, "Message.Warning.SchedXActionSlotCreditFormulaValueInvalid", 
         				originalSplitEntry.id.id, e.getLocalizedMessage());
     			return false;
     		}
@@ -442,7 +432,7 @@ public class ScheduledTransactionEntry extends ParsedEntry {
     			normalSplitEntry.value.fromRealString(debitFormulaSlotEntry.value, BigInteger.valueOf(1000));
     		}
     		catch (NumberFormatException e) {
-        		contentHandler.recordWarningOld("SchedXActionSlotDebitFormulaValueInvalid", "Message.Warning.SchedXActionSlotDebitFormulaValueInvalid", 
+        		contentHandler.recordWarning(originalSplitEntry, "Message.Warning.SchedXActionSlotDebitFormulaValueInvalid", 
         				originalSplitEntry.id.id, e.getLocalizedMessage());
     			return false;
     		}
@@ -465,7 +455,7 @@ public class ScheduledTransactionEntry extends ParsedEntry {
     public boolean generateJGnashScheduledTransaction(GnuCashToJGnashContentHandler contentHandler, Engine engine) {
     	AccountImportEntry templateAccount = contentHandler.templateAccountImportEntries.get(this.templateAccount.id);
     	if (templateAccount == null) {
-    		contentHandler.recordWarningOld("TemplateAccountMissing", "Message.Warning.TemplateAccountMissing", this.name, this.templateAccount.id);
+    		contentHandler.recordWarning(this, "Message.Warning.TemplateAccountMissing", this.name, this.templateAccount.id);
     		return true;
     	}
     	
@@ -535,7 +525,7 @@ public class ScheduledTransactionEntry extends ParsedEntry {
     	}
     	
     	if (jGnashReminder == null) {
-    		contentHandler.recordWarningOld("UnsupportedRecurrencePeriod", "Message.Warning.UnsupportedRecurrencePeriod", 
+    		contentHandler.recordWarning(this, "Message.Warning.UnsupportedRecurrencePeriod", 
     				this.name, recurrenceEntry.periodType);
     		return true;
     	}

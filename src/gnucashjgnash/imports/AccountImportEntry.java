@@ -148,6 +148,14 @@ public class AccountImportEntry extends ParsedEntry {
                             accountEntry.description = value;
                         }
                     });
+
+            case "act:code" :
+                return new SimpleDataStateHandler(this.contentHandler, this, qName, new SimpleDataSetterImpl() {
+                        @Override
+                        protected void setAccountEntryField(AccountImportEntry accountEntry, String value) {
+                            accountEntry.code = value;
+                        }
+                    });
                 
             case "act:slots" :
                 return new SlotEntry.SlotsStateHandler(this.accountEntry.slots, this.accountEntry, this.contentHandler, this, qName);
@@ -181,11 +189,11 @@ public class AccountImportEntry extends ParsedEntry {
                 return;
             }
             if (this.accountEntry.name == null) {
-                recordWarningOld("AccountMissingName", "Message.Parse.XMLAccountMissingElement", this.accountEntry.id, "act:name");
+                recordWarning("Message.Parse.XMLAccountMissingElement", this.accountEntry.id, "act:name");
                 return;
             }
             if (this.accountEntry.type == null) {
-                recordWarningOld("AccountMissingType", "Message.Parse.XMLAccountMissingElement", this.accountEntry.name, "act:type");
+                recordWarning("Message.Parse.XMLAccountMissingElement", this.accountEntry.name, "act:type");
                 return;
             }
             if (this.accountEntry.commoditySCU.isParsed) {
@@ -291,12 +299,12 @@ public class AccountImportEntry extends ParsedEntry {
                 break;
 
             case "RECEIVABLE":
-                contentHandler.recordWarningOld("AccountTypeUnsupported_" + this.type, "Message.Warning.UnsupportedAccountType", this.type);
+                contentHandler.recordWarning(this, "Message.Warning.UnsupportedAccountType", this.type);
                 accountIdsToIgnore.add(this.id.id);
                 return true;
 
             case "PAYABLE":
-                contentHandler.recordWarningOld("AccountTypeUnsupported_" + this.type, "Message.Warning.UnsupportedAccountType", this.type);
+                contentHandler.recordWarning(this, "Message.Warning.UnsupportedAccountType", this.type);
                 accountIdsToIgnore.add(this.id.id);
                 return true;
 
@@ -305,7 +313,7 @@ public class AccountImportEntry extends ParsedEntry {
                 break;
 
             case "TRADING":
-                contentHandler.recordWarningOld("AccountTypeUnsupported_" + this.type, "Message.Warning.UnsupportedAccountType", this.type);
+                contentHandler.recordWarning(this, "Message.Warning.UnsupportedAccountType", this.type);
                 accountIdsToIgnore.add(this.id.id);
                 return true;
 
@@ -315,7 +323,7 @@ public class AccountImportEntry extends ParsedEntry {
 
             case "SAVINGS":
                 accountType = AccountType.CHECKING;
-                   contentHandler.recordWarningOld("SavingsAsChecking", "Message.Info.AccountMapped", this.type, "CHECKING");
+                //contentHandler.recordWarning(this, "Message.Info.AccountMapped", this.type, "CHECKING");
                 break;
 
             case "MONEYMRKT":
@@ -323,7 +331,7 @@ public class AccountImportEntry extends ParsedEntry {
                 break;
 
             case "CREDITLINE":
-                contentHandler.recordWarningOld("AccountTypeUnsupported_" + this.type, "Message.Warning.UnsupportedAccountType", this.type);
+                contentHandler.recordWarning(this, "Message.Warning.UnsupportedAccountType", this.type);
                 return true;
 
         }
@@ -352,7 +360,7 @@ public class AccountImportEntry extends ParsedEntry {
                     newAccount.setAccountCode(code);
                 }
                 catch (NumberFormatException e) {
-                    contentHandler.recordWarningOld("NonIntegerAccountCode_" + this.name, "Message.Warning.NonIntegerAccountCode", this.name, this.code);
+                    contentHandler.recordWarning(this, "Message.Warning.NonIntegerAccountCode", this.code);
                 }
             }
             
@@ -391,9 +399,9 @@ public class AccountImportEntry extends ParsedEntry {
         if (securityNode == null) {
             CurrencyNode currencyNode = contentHandler.jGnashCurrencies.get(this.commodityRef.id);
             if (currencyNode == null) {
-                contentHandler.recordWarningOld("StockAccountSecurityNotFound_" + this.commodityRef.id, "Message.Warning.StockAccountSecurityNotFound", 
-                        this.id.id, this.commodityRef.id);
-                return false;
+                contentHandler.recordWarning(this, "Message.Warning.StockAccountSecurityNotFound", 
+                        this.commodityRef.id);
+                return true;
             }
         }
         

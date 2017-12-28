@@ -202,10 +202,11 @@ public class ImportGnuCashAction {
                 alert.showAndWait();
         	}
         	else if ((this.warningNoticeTree == null) || !this.warningNoticeTree.isNotices()) {
-                final Alert alert = new Alert(Alert.AlertType.INFORMATION, this.errorMsg);
+                final Alert alert = new Alert(Alert.AlertType.INFORMATION, GnuCashConvertUtil.getString("Message.ImportComplete", gnuCashFileName, jGnashFileName));
 
+                alert.setResizable(true);
                 alert.setTitle(GnuCashConvertUtil.getString("Title.ImportComplete"));
-                alert.setContentText(GnuCashConvertUtil.getString("Message.ImportComplete", gnuCashFileName, jGnashFileName));
+                //alert.setContentText(GnuCashConvertUtil.getString("Message.ImportComplete", gnuCashFileName, jGnashFileName));
                 alert.initOwner(stage);
 
                 alert.showAndWait();
@@ -217,8 +218,7 @@ public class ImportGnuCashAction {
         		stage.setMinHeight(300);
         		
         		VBox pane = new VBox();
-        		pane.setAlignment(Pos.CENTER);
-        		pane.setPadding(new Insets(10));
+        		pane.setPadding(new Insets(20));
         		
         		Text caption = new Text(GnuCashConvertUtil.getString("Message.WarningsCaption"));
         		pane.getChildren().add(caption);
@@ -227,10 +227,14 @@ public class ImportGnuCashAction {
         		TreeView<NoticeTree.SourceEntry> treeView = new TreeView<NoticeTree.SourceEntry>(root);
         		treeView.setShowRoot(false);
         		pane.getChildren().add(treeView);
-        		
+
         		Button closeButton = new Button(GnuCashConvertUtil.getString("Button.Close"));
         		closeButton.setDefaultButton(true);
-        		pane.getChildren().add(closeButton);
+        		
+        		VBox buttonPane = new VBox();
+        		buttonPane.setAlignment(Pos.CENTER);
+        		buttonPane.getChildren().add(closeButton);
+        		pane.getChildren().add(buttonPane);
         		closeButton.setOnAction(e -> stage.close());
         		
         		Scene scene = new Scene(pane);

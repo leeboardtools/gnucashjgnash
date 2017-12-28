@@ -18,6 +18,7 @@ package gnucashjgnash.imports;
 
 import org.xml.sax.Attributes;
 
+import gnucashjgnash.GnuCashConvertUtil;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandler;
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 
@@ -49,7 +50,7 @@ public class SlotEntry extends ParsedEntry {
 	 */
 	@Override
 	public String getIndentifyingText(GnuCashToJGnashContentHandler contentHandler) {
-		return this.key;
+		return GnuCashConvertUtil.getString("Message.ParsedEntry.SlotEntryKey", this.key);
 	}
 
 
@@ -158,17 +159,17 @@ public class SlotEntry extends ParsedEntry {
             super.endState();
 
             if (this.slotEntry.key == null) {
-                recordWarningOld("SlotKeyMissing", "Message.Parse.XMLSlotKeyMissing", this.elementName);
+                recordWarning("Message.Parse.XMLSlotKeyMissing", this.elementName);
                 return;
             }
             if (this.slotEntry.valueType == null) {
-                recordWarningOld("SlotValueTypeMissing", "Message.Parse.XMLSlotValueTypeMissing",
+                recordWarning("Message.Parse.XMLSlotValueTypeMissing",
                         this.elementName, this.slotEntry.key, "slot:value");
                 return;
             }
 
             if (this.slotEntries.put(this.slotEntry.key, this.slotEntry) != null) {
-                recordWarningOld("DuplicateSlotKey", "Message.Parse.XMLDuplicateSlotKey", this.elementName, this.slotEntry.key);
+                recordWarning("Message.Parse.XMLDuplicateSlotKey", this.elementName, this.slotEntry.key);
             }
         }
     }
@@ -227,29 +228,31 @@ public class SlotEntry extends ParsedEntry {
          */
         @Override
         protected StateHandler getStateHandlerForElement(String qName) {
-            switch (this.slotEntry.valueType) {
-                case "timespec" :
-                    this.slotEntry.timeEntryValue = new TimeEntry(this.slotEntry);
-                    return new TimeEntry.TimeStateHandler(this.slotEntry.timeEntryValue, this.contentHandler, this, qName);
-                    
-                case "gdate" :
-                    this.slotEntry.gDateEntryValue = new GDateEntry(this.slotEntry);
-                    return new GDateEntry.GDateStateHandler(this.slotEntry.gDateEntryValue, this.contentHandler, this, qName);
-                    
-                case "numeric":
-                    this.slotEntry.numericValue = new NumericEntry(this.slotEntry);
-                    return new NumericEntry.NumericStateHandler(this.slotEntry.numericValue, this.contentHandler, this, qName);
-                    
-                    //case "list":
-                case "frame":
-                    if (this.slotEntry.frameSlotEntries == null) {
-                        this.slotEntry.frameSlotEntries = new HashMap<>();
-                    }
-                    if ("slot".equals(qName)) {
-                        return new SlotStateHandler(this.slotEntry.frameSlotEntries, this.slotEntry, this.contentHandler, this, qName);
-                    }
-                    break; 
-            }
+        	if (this.slotEntry.valueType != null) {
+	            switch (this.slotEntry.valueType) {
+	                case "timespec" :
+	                    this.slotEntry.timeEntryValue = new TimeEntry(this.slotEntry);
+	                    return new TimeEntry.TimeStateHandler(this.slotEntry.timeEntryValue, this.contentHandler, this, qName);
+	                    
+	                case "gdate" :
+	                    this.slotEntry.gDateEntryValue = new GDateEntry(this.slotEntry);
+	                    return new GDateEntry.GDateStateHandler(this.slotEntry.gDateEntryValue, this.contentHandler, this, qName);
+	                    
+	                case "numeric":
+	                    this.slotEntry.numericValue = new NumericEntry(this.slotEntry);
+	                    return new NumericEntry.NumericStateHandler(this.slotEntry.numericValue, this.contentHandler, this, qName);
+	                    
+	                    //case "list":
+	                case "frame":
+	                    if (this.slotEntry.frameSlotEntries == null) {
+	                        this.slotEntry.frameSlotEntries = new HashMap<>();
+	                    }
+	                    if ("slot".equals(qName)) {
+	                        return new SlotStateHandler(this.slotEntry.frameSlotEntries, this.slotEntry, this.contentHandler, this, qName);
+	                    }
+	                    break; 
+	            }
+        	}
             return super.getStateHandlerForElement(qName);
         }
 
@@ -259,22 +262,24 @@ public class SlotEntry extends ParsedEntry {
         @Override
         protected void endState() {
             super.endState();
-            switch (this.slotEntry.valueType) {
-                case "integer" :
-                    this.slotEntry.value = this.characters;
-                    break;
-                case "double" :
-                    this.slotEntry.value = this.characters;
-                    break;
-                case "string" :
-                    this.slotEntry.value = this.characters;
-                    break;
-                case "guid":
-                    this.slotEntry.value = this.characters;
-                    break;
-                case "binary":
-                    this.slotEntry.value = this.characters;
-                    break;
+            if (this.slotEntry.valueType != null) {
+	            switch (this.slotEntry.valueType) {
+	                case "integer" :
+	                    this.slotEntry.value = this.characters;
+	                    break;
+	                case "double" :
+	                    this.slotEntry.value = this.characters;
+	                    break;
+	                case "string" :
+	                    this.slotEntry.value = this.characters;
+	                    break;
+	                case "guid":
+	                    this.slotEntry.value = this.characters;
+	                    break;
+	                case "binary":
+	                    this.slotEntry.value = this.characters;
+	                    break;
+	            }
             }
         }
         
