@@ -170,8 +170,12 @@ public class AccountImportEntry extends ParsedEntry {
             	return new IntEntry.IntEntryStateHandler(this.accountEntry.commoditySCU, this.contentHandler, this, qName);
                 
             case "act:non-standard-scu" :
+            	recordWarning("Message.Parse.XMLNonStandardSCUUnsupported");
             	break;
-
+            
+            case "act:lots" :
+            	recordWarning("Message.Parse.XMLAccountLotsUnsupported");
+            	break;
             }
 
             return super.getStateHandlerForElement(qName);

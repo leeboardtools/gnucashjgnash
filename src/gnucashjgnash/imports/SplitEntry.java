@@ -138,6 +138,10 @@ public class SplitEntry extends ParsedEntry {
                     this.id.id, this.reconciledState);
             return false;
         }
+        
+        if (this.lot.isParsed()) {
+        	contentHandler.recordWarning(this.parentSource, "Message.Parse.XMLSplitLotsUnsupported");
+        }
 
         return true;        
     }
@@ -263,8 +267,7 @@ public class SplitEntry extends ParsedEntry {
                 return new IdEntry.IdStateHandler(this.splitEntry.account, this.contentHandler, this, qName);
                 
             case "split:lot":
-                // TODO: Split lots
-                break;
+            	return new IdEntry.IdStateHandler(this.splitEntry.lot, this.contentHandler, this, qName);
                 
             case "split:slots" : 
                 return new SlotEntry.SlotsStateHandler(this.splitEntry.slots, this.splitEntry, this.contentHandler, this, qName);
