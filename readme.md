@@ -15,7 +15,7 @@ Make sure you:
 - Get your GnuCash database up-to-date before conversion! (i.e. make sure any pending scheduled transactions, etc. are run)
 - Read the following notes!
 
-
+## Items To Note
 Some of the items to note (most of this is based upon information in the GnuCash document
 https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc, and might not have a direct feature in GnuCash):
 
@@ -64,17 +64,22 @@ https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc
         - A buy transaction recording the purchase of the shares from the investment account.
         
 - Scheduled transactions:
-    - Only fairly simple scheduled transactions are supported. Only one template transaction is supported (may change to a new scheduled transaction
-    is created for each template transaction)
+    - Only fairly simple scheduled transactions are supported. Only one template transaction is supported 
+    (may change to a new scheduled transaction is created for each template transaction)
     - Semi-monthly transactions are converted to two separate transactions.
+    - End of month transactions are treated as month transactions. The number of days from the end of the month is lost.
     - Reinvested dividends are not supported (they require 2 transactions, but the jGnash Reminder class only supports 1).
-    - End of month? 
     - The last date is not transferred, so make sure your GnuCash database is up to date before transferring.
     - Reminders are only generated for scheduled transactions that have a template transaction.
     - The 'except on weekends' setting is currently ignored, for the end of month it's always set to the last valid day of
     the month.
 
 - Budgets are not supported.
+
+## Warnings
+Detected issues are recorded as warnings, which are displayed at the end of the conversion. The warnings are also written to the file Warnings.TXT in the same folder as the GnuCash database file. If there's an existing Warnings.TXT file it is overwritten.
+
+If any warnings are displayed, be sure to review the warnings!
 
 
 # Project Development Notes:
