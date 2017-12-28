@@ -56,6 +56,8 @@ public abstract class ParsedEntry implements NoticeTree.Source {
 	}
 	
 	
+	public final int getLineNumber() { return this.lineNumber; }
+	public final int getColumnNumber() { return this.columnNumber; }
 	
 	/**
 	 * Retrieves the localized message text identifying the entry, what's displayed in the

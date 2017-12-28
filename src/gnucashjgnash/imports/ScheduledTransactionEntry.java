@@ -102,7 +102,7 @@ public class ScheduledTransactionEntry extends ParsedEntry {
 	 */
 	@Override
 	public String getUniqueId() {
-		return this.id.id;
+		return GnuCashConvertUtil.getString("Message.ParsedEntry.ScheduledTransactionEntryId", this.id.id);
 	}
 
 

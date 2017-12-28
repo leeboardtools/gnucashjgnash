@@ -27,7 +27,6 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandle
 import gnucashjgnash.imports.GnuCashToJGnashContentHandler.StateHandler;
 import jgnash.engine.Account;
 import jgnash.engine.AccountGroup;
-import jgnash.engine.AccountType;
 import jgnash.engine.ReconciledState;
 import jgnash.engine.SecurityNode;
 
@@ -89,7 +88,7 @@ public class SplitEntry extends ParsedEntry {
 	 */
 	@Override
 	public String getUniqueId() {
-		return this.id.id;
+		return GnuCashConvertUtil.getString("Message.ParsedEntry.SplitEntryId", this.id.id);
 	}
 
 

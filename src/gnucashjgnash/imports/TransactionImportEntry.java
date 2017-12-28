@@ -17,11 +17,7 @@
 package gnucashjgnash.imports;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -105,7 +101,7 @@ public class TransactionImportEntry extends ParsedEntry {
 	 */
 	@Override
 	public String getUniqueId() {
-		return this.id.id;
+		return GnuCashConvertUtil.getString("Message.ParsedEntry.TransactionImportEntryId", this.id.id);
 	}
 	
 	

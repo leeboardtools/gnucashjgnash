@@ -28,7 +28,7 @@ public class GnuCashConvertUtil {
     /**
      * key for locale preference
      */
-    private static final String LOCALE = "locale";
+    //private static final String LOCALE = "locale";
 
     private static final String DEFAULT_RESOURCE_BUNDLE = "resource";
 

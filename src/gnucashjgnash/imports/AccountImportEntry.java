@@ -38,7 +38,7 @@ import gnucashjgnash.imports.GnuCashToJGnashContentHandler.SimpleDataStateHandle
  *
  */
 public class AccountImportEntry extends ParsedEntry {
-    private static final Logger LOG = Logger.getLogger(AccountImportEntry.class.getName());
+    //private static final Logger LOG = Logger.getLogger(AccountImportEntry.class.getName());
 
     String name;
     IdEntry id = new IdEntry(this);
@@ -86,7 +86,7 @@ public class AccountImportEntry extends ParsedEntry {
 	 */
 	@Override
 	public String getUniqueId() {
-		return this.id.id;
+		return GnuCashConvertUtil.getString("Message.ParsedEntry.AccountImportEntryId", this.id.id);
 	}
 
 

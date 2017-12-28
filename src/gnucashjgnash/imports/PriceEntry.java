@@ -78,7 +78,7 @@ public class PriceEntry extends ParsedEntry {
 	 */
 	@Override
 	public String getUniqueId() {
-		return this.id.id;
+		return GnuCashConvertUtil.getString("Message.ParsedEntry.PriceEntryId", this.id.id);
 	}
 
 
