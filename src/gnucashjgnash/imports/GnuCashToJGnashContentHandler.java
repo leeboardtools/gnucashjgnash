@@ -1173,7 +1173,8 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
         int index = keys.length - 1;
         for (; index >= 0; --index) {
             LocalDate date = keys[index];
-            if (date.isBefore(monthAgo)) {
+            // The count test is to make sure we get the newest date.
+            if (date.isBefore(monthAgo) && (count > 0)) {
                 break;
             }
 

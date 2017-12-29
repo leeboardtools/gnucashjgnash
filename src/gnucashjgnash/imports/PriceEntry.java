@@ -227,7 +227,7 @@ public class PriceEntry extends ParsedEntry {
             price = this.value.toBigDecimal();
         }
         catch (Exception e) {
-            contentHandler.recordWarning(this, "Message.Warning.SecurityHistoryValueInvalid");
+            contentHandler.recordWarning(this, "Message.Warning.SecurityHistoryValueInvalid", e.getLocalizedMessage());
             return true;
         }
         
