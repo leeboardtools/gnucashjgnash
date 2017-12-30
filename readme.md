@@ -80,6 +80,14 @@ always save the binary file to the desired format after conversion.
 
 - Budgets are not supported.
 
+- Discrepancies between GnuCash and jGnash balances:
+
+	As of jGnash 2.33.3, you may see a small difference between the balances of parent accounts displayed in the jGnash Accounts page and the corresponding balance in GnuCash's Accounts tab. As far as I know this should only occur when one or more child accounts contains Investment accounts, or rather accounts that have a market value. This difference is a round-off error due to the way jGnash parent accounts compute their balance for display in the Accounts page.
+	
+	In jGnash 2.33.3 the parent account sums the market values of the child Investment accounts without rounding the value to cents. This difference can accumulate into several cents difference between the jGnash balance displayed and the GnuCash balance displayed, particularly if there are many child accounts. If you compare the balances of the individual child accounts, and the actual account balance of the parent account, the values should match those of GnuCash.
+	
+	Something to keep in mind when trying to verify your balances: Look at the inner-most child account balances in the Accounts page, and then look at the internal balance of any parent account (by internal balance I mean open up the parent account and see what the balance at the top of the page shows).
+
 ## Warnings
 Detected issues are recorded as warnings, which are displayed at the end of the conversion. The warnings are also written to the file Warnings.TXT in the same folder as the GnuCash database file. If there's an existing Warnings.TXT file it is overwritten.
 
