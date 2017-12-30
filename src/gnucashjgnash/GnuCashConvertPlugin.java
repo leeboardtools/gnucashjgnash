@@ -50,7 +50,7 @@ public class GnuCashConvertPlugin implements SwingPlugin, FxPlugin {
 
                     importMenuItem.setOnAction(event -> ImportGnuCashAction.showAndWait(MainView.getPrimaryStage()));
 
-                    ((Menu) menuItem).getItems().add(MENU_INDEX, importMenuItem);
+                    ((Menu) menuItem).getItems().add(importMenuItem);
                 }));
     }
 }
