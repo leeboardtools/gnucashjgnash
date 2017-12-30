@@ -19,6 +19,9 @@ Make sure you:
 Some of the items to note (most of this is based upon information in the GnuCash document
 https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc, and might not have a direct feature in GnuCash):
 
+- The binary jGnash file format is used, as this much faster and produces much smaller files than the database or XML formats. You can
+always save the binary file to the desired format after conversion.
+
 - Accounts:
 	- Only following GnuCash account types are supported:
 	 	- Bank
@@ -62,7 +65,7 @@ https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc
 	   Reinvested dividends in investments are detected by a transaction where one account is an investment or mutual fund account and
 	   the other account is an income account. The transaction is entered as two transactions:
         - A dividend transaction recording the income in the income account and the cash addition to the investment account.
-        - A buy transaction recording the purchase of the shares from the investment account.
+        - A buy transaction recording the purchase of the shares using the investment account.
         
 - Scheduled transactions:
     - Only fairly simple scheduled transactions are supported. Only one template transaction is supported 

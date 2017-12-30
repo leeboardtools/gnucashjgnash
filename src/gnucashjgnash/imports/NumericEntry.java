@@ -112,7 +112,7 @@ public class NumericEntry extends ParsedEntry {
     }
     
     public BigDecimal divide(NumericEntry divisor) {
-        int scale = Math.max(this.scale, divisor.scale);
+    	int scale = this.scale + divisor.scale;
         BigDecimal bdNumerator = new BigDecimal(this.numerator).multiply(new BigDecimal(divisor.denominator)).setScale(scale);
         BigDecimal bdDenominator = new BigDecimal(this.denominator).multiply(new BigDecimal(divisor.numerator)).setScale(scale);
         return bdNumerator.divide(bdDenominator, RoundingMode.HALF_EVEN);
