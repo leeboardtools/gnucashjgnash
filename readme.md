@@ -94,6 +94,15 @@ Detected issues are recorded as warnings, which are displayed at the end of the 
 If any warnings are displayed, be sure to review the warnings!
 
 
+# Installation
+To install the plug-in, simply download the GnuCashJGnash.jar file: https://github.com/leeboardtools/gnucashjgnash/blob/master/dist/GnuCashJGnash.jar
+and copy it into the plugins folder of jGnash.
+
+To use the plug-in, launch the JavaFx version of jGnash, then go to the File > Import menu and choose Convert GnuCash to jGnash. If Convert GnuCash to jGnash is not in the Import menu, make sure you are running the JavaFx version of jGnash, not the Swing version.
+
+When you're done with the plug-in, simply delete it from the plugins folder of jGnash.
+
+
 # Project Development Notes:
 Here are my notes on creating a new plugin for jGnash that can be developed and debugged from Eclipse.
 
