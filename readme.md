@@ -104,6 +104,8 @@ When you're done with the plug-in, simply delete it from the plugins folder of j
 
 
 # Project Development Notes:
+You can now load and run/debug the plugin from Netbeans 8.2 (the only version I tried), simply open the GnuCashJGnash folder from Netbeans. You will need to follow the Setting up the environment stuff below for the non-Eclipse portions.
+
 Here are my notes on creating a new plugin for jGnash that can be developed and debugged from Eclipse.
 
 ## Setting up the environment:
