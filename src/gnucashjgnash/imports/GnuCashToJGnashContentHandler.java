@@ -852,7 +852,8 @@ public class GnuCashToJGnashContentHandler implements ContentHandler {
             this.sortedPriceEntries.put(securityId, priceEntriesForSecurity);
         }
         
-        if (priceEntriesForSecurity.put(priceEntry.time.localDate, priceEntry) != null) {
+        PriceEntry existingEntry = priceEntriesForSecurity.put(priceEntry.time.localDate, priceEntry);
+        if ((existingEntry != null) && !existingEntry.value.equals(priceEntry.value)) {
             recordWarning(priceEntry.getParentSource(), "Message.Parse.XMLDuplicatePriceEntry", securityId, priceEntry.time.toDateString());
         }
         

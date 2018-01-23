@@ -19,6 +19,7 @@ package gnucashjgnash.imports;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.util.Objects;
 
 /**
  * Represents a parsed GnuCash GncNumeric from <a href="https://github.com/Gnucash/gnucash/blob/master/libgnucash/doc/xml/gnucash-v2.rnc" target="_blank" rel="noopener noreferrer">gnucash-v2.rnc</a>
@@ -31,12 +32,45 @@ public class NumericEntry extends ParsedEntry {
     int scale;
     
     /**
-	 * @param contentHandler
+	 * @param parentParsedEntry
 	 */
 	protected NumericEntry(ParsedEntry parentParsedEntry) {
 		super(null);
 		this.parentSource = parentParsedEntry;
 	}
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 83 * hash + Objects.hashCode(this.numerator);
+        hash = 83 * hash + Objects.hashCode(this.denominator);
+        hash = 83 * hash + this.scale;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final NumericEntry other = (NumericEntry) obj;
+        if (this.scale != other.scale) {
+            return false;
+        }
+        if (!Objects.equals(this.numerator, other.numerator)) {
+            return false;
+        }
+        if (!Objects.equals(this.denominator, other.denominator)) {
+            return false;
+        }
+        return true;
+    }
 
     
     /* (non-Javadoc)

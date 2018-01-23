@@ -314,7 +314,6 @@ public class TransactionImportEntry extends ParsedEntry {
         
         if (desc != null) {
             transaction.setPayee(desc);
-            //transaction.setMemo(desc);
         }
         if (this.num != null) {
             transaction.setNumber(this.num);
@@ -324,6 +323,15 @@ public class TransactionImportEntry extends ParsedEntry {
 
         if (!generateJGnashSplitTransactionEntries(splitsList, contentHandler, transaction)) {
             return false;
+        }
+        
+        if (splitsList.size() > 2) {
+            // jGnash likes to set the memo of the transaction to that of one of the
+            // splits, I don't want that. Using " " because "" doesn't seem to work.
+            String memo = transaction.getMemo();
+            if ((memo != null) && !memo.isEmpty()) {
+                transaction.setMemo(" ");
+            }
         }
         
         jGnashTransactions.add(transaction);
