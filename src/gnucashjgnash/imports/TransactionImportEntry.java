@@ -50,7 +50,6 @@ public class TransactionImportEntry extends ParsedEntry {
     String num;
     TimeEntry datePosted = new TimeEntry(this);
     TimeEntry dateEntered = new TimeEntry(this);
-    String description;
     Map<String, SlotEntry> slots = new HashMap<>();
     Map<String, SplitEntry> splits = new HashMap<>();
     List<SplitEntry> originalSplitsList = new ArrayList<>();
@@ -272,7 +271,7 @@ public class TransactionImportEntry extends ParsedEntry {
         }
         
         ArrayList<SplitEntry> splitsList = new ArrayList<>();
-        String memo = this.description;
+        String desc = this.description;
         
         // Handle special splits...
         for (SplitEntry splitEntry : this.originalSplitsList) {
@@ -280,7 +279,7 @@ public class TransactionImportEntry extends ParsedEntry {
                 if (!handleSecuritySplitSplit(splitEntry, contentHandler, jGnashTransactions)) {
                     return false;
                 }
-                memo = null;
+                desc = null;
             }
             else {
                 splitsList.add(splitEntry);
@@ -313,8 +312,9 @@ public class TransactionImportEntry extends ParsedEntry {
         
         final Transaction transaction = new Transaction();
         
-        if (memo != null) {
-            transaction.setMemo(memo);
+        if (desc != null) {
+            transaction.setPayee(desc);
+            //transaction.setMemo(desc);
         }
         if (this.num != null) {
             transaction.setNumber(this.num);
@@ -441,7 +441,7 @@ public class TransactionImportEntry extends ParsedEntry {
                 for (SplitEntry feeSplitEntry : feeSplitEntries) {
                     BigDecimal feeAmount = feeSplitEntry.value.toBigDecimal();
                     TransactionEntry transactionEntry = generateJGnashTransactionEntry(contentHandler, accountSplitEntry, feeAmount.negate(),
-                            feeSplitEntry, feeAmount);
+                            feeSplitEntry, feeAmount, null);
                     transactionEntry.setTransactionTag(TransactionTag.INVESTMENT_FEE);
                     fees.add(transactionEntry);
                 }
@@ -623,7 +623,7 @@ public class TransactionImportEntry extends ParsedEntry {
             
             BigDecimal bigDecimalValue = splitEntry.value.toBigDecimal();
             TransactionEntry transactionEntry = generateJGnashTransactionEntry(contentHandler,
-                    masterSplitEntry, bigDecimalValue.negate(), splitEntry, bigDecimalValue); 
+                    masterSplitEntry, bigDecimalValue.negate(), splitEntry, bigDecimalValue, splitEntry); 
             if (transactionEntry == null) {
                 return false;
             }
@@ -635,7 +635,7 @@ public class TransactionImportEntry extends ParsedEntry {
     }
     
     protected TransactionEntry generateJGnashTransactionEntry(GnuCashToJGnashContentHandler contentHandler, SplitEntry splitEntryA, BigDecimal amountA,
-        SplitEntry splitEntryB, BigDecimal amountB) {
+        SplitEntry splitEntryB, BigDecimal amountB, SplitEntry memoSplitEntry) {
         SplitEntry creditSplitEntry;
         BigDecimal creditAmount;
         SplitEntry debitSplitEntry;
@@ -665,7 +665,12 @@ public class TransactionImportEntry extends ParsedEntry {
         transactionEntry.setReconciled(creditSplitEntry.jGnashAccount, creditSplitEntry.jGnashReconciledState);
         transactionEntry.setReconciled(debitSplitEntry.jGnashAccount, debitSplitEntry.jGnashReconciledState);
         
-        if (creditSplitEntry.memo != null) {
+        if (memoSplitEntry != null) {
+            if (memoSplitEntry.memo != null) {
+                transactionEntry.setMemo(memoSplitEntry.memo);
+            }
+        }
+        else if (creditSplitEntry.memo != null) {
             transactionEntry.setMemo(creditSplitEntry.memo);
         }
         else if (debitSplitEntry.memo != null) {
